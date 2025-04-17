@@ -1,7 +1,16 @@
-from numbalsoda import lsoda_sig, lsoda
-from numba import njit, cfunc
-import numba as nb
 import numpy as np
+import copy
+from numbalsoda import lsoda_sig, lsoda
+from numba import cfunc
+import numba as nb
+
+def model(x, dt, T, funcptr):
+      tspan = np.array([0, dt])
+      usol = copy.deepcopy(x)
+      for t in range(T):
+            usol, success = lsoda(funcptr, usol, tspan)
+            usol = usol[-1, :]
+      return usol 
 
 def make_rhs_l63(kwargs):
       s = kwargs['s']

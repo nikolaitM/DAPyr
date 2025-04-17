@@ -1,5 +1,38 @@
-import copy
 import numpy as np
+import copy
+
+def pf_update(xm, hx, Y, var_y):
+      Nx, Ne = xm.shape
+      Ny = len(Y)
+      xa = xm
+      hxa = hx
+      for i in range(Ny):
+            d = Y[i, :] - hxa[i,:] #innovation
+            w = (1/np.sqrt(2*np.pi*var_y))*np.exp(-d**2/(2*var_y))
+            w = w/np.sum(w) #normalize
+            #Sample with replacement from probabilities 
+            ind = np.random.choice(Ne, Ne, p=w)
+            xa = xa[:, ind]
+            hxa = hxa[:, ind]
+      #Add some noise to the final product
+      return xa + np.random.randn(Nx, Ne)*0.1
+
+def StochEnKF_update(xf, hx, xm, hxm, y, var_y):
+      #Emsemble mean
+      Ny = len(y[:, 0])
+      Nx, Ne = xf.shape
+      eps = np.random.normal(0, np.sqrt(var_y), (Ny, Ne))
+      eps_mean = np.mean(eps, axis = -1)[:, np.newaxis]
+      X = (1/np.sqrt(Ne-1))*(xf - xm)
+      Y = (1/np.sqrt(Ne-1))*(hx + eps - hxm - eps_mean)
+      XY = np.matmul(X, Y.T)
+      YY = np.matmul(Y, Y.T)
+      eta = np.zeros(xf.shape)
+      for n in range(Ne):
+            b = np.linalg.solve(YY, y[:, 0] - (hx[:, n] + eps[:, n]))[:, np.newaxis]
+            eta[:, n] = xf[:, n] + np.matmul(XY, b)[:, 0]
+      return eta
+
 
 def EnSRF_update(xf, hx, xm, hxm, y, HC, HCH, var_y, gamma, e_flag, qc):
       #Ensemble mean
@@ -41,3 +74,4 @@ def EnSRF_update(xf, hx, xm, hxm, y, HC, HCH, var_y, gamma, e_flag, qc):
       inf_factor = gamma*((var_xpo-var_xp)/var_xp) + 1
       xp = xp*inf_factor[:, np.newaxis]
       return xm + xp, e_flag
+
