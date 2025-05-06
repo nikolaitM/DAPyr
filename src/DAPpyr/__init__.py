@@ -157,7 +157,7 @@ class Expt:
             if self.getParam('saveEnsMean') != 0:
                   self.x_ensmean = np.zeros((Nx, T))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
-            self.spread = np.zeros((T,)) #Spread of Expt
+            self.spread = np.zeros((T,2)) #Spread of Expt Prio/Posterior
 
       #Modify the Experiment Parameters
       def _initBasic(self):
@@ -180,8 +180,14 @@ class Expt:
             self.obsParams['inflation'] = 1
             self.obsParams['inf_flag'] = 0
             self.obsParams['gamma'] = 0.03
+
             #LPF Parameters
             self.obsParams['roi_pf'] = 0.005
+            self.obsParams['mixing_gamma'] = 0.3
+            self.obsParams['kddm_flag'] = 1
+            self.obsParams['min_res'] = 0.0
+            self.obsParams['maxiter'] = 1
+            self.obsParams['Nt_eff'] = 0.4
       def _initModel(self):
             self.modelParams['model_flag'] = 0
             #Store the default parameters for all the possible models here
@@ -391,7 +397,14 @@ def runDA(expt: Expt):
       Ny = expt.getParam('Ny')
       tau = expt.getParam('tau')
       C_kf = expt.getParam('C_kf')
+      C_pf = expt.getParam('C_pf')
+      Nt_eff = expt.getParam('Nt_eff')
+      mixing_gamma = expt.getParam('mixing_gamma')
+      min_res = expt.getParam('min_res')
+      kddm_flag = expt.getParam('kddm_flag')
+      maxiter = expt.getParam('maxiter')
       HC_kf = np.matmul(C_kf,H.T)
+      HC_pf = np.matmul(C_pf,H.T)
       gamma = expt.getParam('gamma')
       #Flags
       h_flag, expt_flag = expt.getParam('h_flag'), expt.getParam('expt_flag')
@@ -403,6 +416,7 @@ def runDA(expt: Expt):
 
       e_flag = expt.getParam('error_flag')
       rmse = expt.rmse
+      spread = expt.spread
       if saveEns:
             x_ens = expt.x_ens
       if saveEnsMean:
@@ -433,7 +447,7 @@ def runDA(expt: Expt):
                   'evolved': (['t', 'Nx', 'mem'], np.zeros((sv_t, Nx, Ne))*np.nan),
                   'energy': (['t', 'mem'], np.zeros((sv_t, Ne))*np.nan),
                   'evalue': (['t', 'mem'], np.zeros((sv_t, Ne))*np.nan)}
-
+            svpfunc = partial(MODELS.model, dt = dt, T = forecastSV, funcptr = funcptr)
 
       # Time Loop
       xf_0, xt, Y = expt.getStates()
@@ -442,6 +456,7 @@ def runDA(expt: Expt):
       for t in range(T):
             #Observation
             xm = np.mean(xf, axis = -1)[:, np.newaxis]
+            spread[t, 0] = np.sqrt(np.mean(np.sum((xf - xm)**2, axis = -1)/(Ne - 1)))
             match h_flag:
                   case 0:
                         hx = np.matmul(H, xf)
@@ -460,14 +475,15 @@ def runDA(expt: Expt):
                   d = np.abs((Y[i, t, :] - hxm[i, :])[0])
                   if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
                         qaqcpass[i] = 1
-
             #Data Assimilation
             match expt_flag:
                   case 0: #Deterministic EnKF
                         xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, Y[:, t], C_kf, HC_kf, var_y, gamma, e_flag, qaqcpass)
                         #xa = enkf_update(xf, hx, xm, hxm, Y[:, t], var_y)
-                  case 1: #Bootstrap PF
-                        xa = DA.pf_update(xf, hx, Y[:, t], var_y)
+                  case 1: #LPF
+                        xa, e_flag = DA.pf_update(xf, hx, Y[:, t, :].T, C_pf, HC_pf, Nt_eff*Ne, min_res, mixing_gamma, var_y, kddm_flag, qaqcpass, maxiter)
+                        #xa = DA.pf_update(xf, hx, Y[:, t], var_y)
+                        #xa = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C_pf, Nt_eff*Ne, mixing_gamma)
                   case 2: # Stochastic EnKF
                         xa = DA.StochEnKF_update(xf, hx, xm ,hxm, Y[:, t], var_y)
                   case 3: #Nothing
@@ -485,12 +501,16 @@ def runDA(expt: Expt):
                  
             if doSV and t % stepSV == 0:
                   #Run SV calculation  
-                  for n in range(Ne):
-                        xf_sv[:, n] = MODELS.model(xa[:, n], dt, forecastSV, funcptr)
+                  #xa_sv = copy.deepcopy(xa)
+                  xf_sv= np.stack(pool.map(svpfunc, [xa[:, i] for i in range(Ne)]), axis = -1)
+                  #for n in range(Ne):
+                  #      xf_sv[:, n] = MODELS.model(xa[:, n], dt, forecastSV, funcptr)
                   sv_data['initial'][1][countSV, :, :], sv_data['evolved'][1][countSV, :, :], sv_data['energy'][1][countSV, :], sv_data['evalue'][1][countSV, :] = MISC.calc_SV(xa, xf_sv)
                   countSV+=1                  
 
             rmse[t] = np.sqrt(np.mean((xt[:, t] - np.mean(xa, axis = -1))**2))
+            spread[t, 1] = np.sqrt(np.mean(np.sum((xa - np.mean(xa, axis = -1)[:, np.newaxis])**2, axis = -1)/(Ne - 1)))
+
             #Model integrate forward
 
             #Multiprocessing
@@ -510,3 +530,4 @@ def runDA(expt: Expt):
 
       #Output stuff
       expt.modExpt({'status': 'completed'})
+      return expt.getParam('status')

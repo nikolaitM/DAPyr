@@ -1,4 +1,6 @@
 import numpy as np
+from scipy.special import erf
+from scipy.interpolate import interp1d
 
 
 def calc_SV(xa, xf):
@@ -31,3 +33,166 @@ def create_periodic(sigma, m, dx):
             B[i, :] = wlc[m - i:2*m - i]
       B = np.where(B < 0, 0, B)
       return B
+
+
+def find_beta(sum_exp, Neff):
+    ''' perform bisection method search for the tempering coefficient beta
+    that yields a sufficiently large effective ensemble size'''
+    Ne = len(sum_exp)
+    beta_max = max(1, 20 * max(sum_exp))
+    
+    w = np.exp(-sum_exp)
+    ws = np.sum(w)
+    
+    if ws > 0:
+        w /= ws
+        Neff_init = 1 / np.sum(w ** 2)
+    else:
+        Neff_init = 1
+    
+    if Neff == 1:
+        return 1
+    
+    if Neff_init < Neff or ws == 0:
+        ks, ke = 1, beta_max
+        tol = 1e-3
+        
+        for _ in range(1000):
+            w = np.exp(-sum_exp / ks)
+            w /= np.sum(w)
+            fks = Neff - 1 / np.sum(w ** 2)
+            if np.isnan(fks):
+                fks = Neff - 1
+            
+            w = np.exp(-sum_exp / ke)
+            w /= np.sum(w)
+            fke = Neff - 1 / np.sum(w ** 2)
+            
+            km = (ke + ks) / 2
+            w = np.exp(-sum_exp / km)
+            w /= np.sum(w)
+            fkm = Neff - 1 / np.sum(w ** 2)
+            if np.isnan(fkm):
+                fkm = Neff - 1
+            
+            if abs(ke - ks) < tol:
+                break
+            
+            if fkm * fks > 0:
+                ks = km
+            else:
+                ke = km
+        
+        beta = km
+        w = np.exp(-sum_exp / beta)
+        w /= np.sum(w)
+        Nf = 1 / np.sum(w ** 2)
+        
+        if Nf <= Neff - 1 or np.isnan(Nf):
+            print(f'WARNING! Neff is {Nf} but target is {Neff}')
+            beta = beta_max
+        
+    else:
+        beta = 1
+    
+    return beta
+
+
+def get_reg(Nx, Ny, Ne, C, hw, Neff, res, beta_max):
+    # find next regularization coefficient for the current
+    # tempering step; uses precomputed particle weights
+    # and bisection method on beta (see above) to do so,
+    # then reduces the residual term appropriately so we know
+    # how much of the factored likelihood we have left to assimilate.
+    beta = np.zeros(Nx)
+
+    # print((Ne * hw[0, :] - 1) * C[0, 0])
+    # print(np.log((Ne * hw[0, :] - 1) * C[0, 0] + 1))
+
+    for j in range(Nx):
+        if res[j] <= 0:
+            beta[j] = beta_max
+            continue
+        
+        wo = 0.0
+        for i in range(Ny):
+            dum = np.log((Ne * hw[i, :] - 1) * C[i, j] + 1)
+            wo -= dum
+            wo -= np.min(wo)
+
+        # return
+
+        
+        beta[j] = find_beta(wo, Neff)
+        
+        
+        if res[j] < 1 / beta[j]:
+            beta[j] = 1 / res[j]
+            res[j] = 0
+        else:
+            res[j] -= 1 / beta[j]
+        
+        beta[j] = min(beta[j], beta_max)
+    
+    
+    # print(beta)
+    return beta, res
+
+
+
+# glue prior and resampled particles together given posterior moments
+# that we're seeking to match and a localization length scale
+# merging is done to match the vanilla pf solution when no localization is happening
+# and to match the prior when we're at a state very far away from the current obs
+
+def sampling(x, w, Ne):
+
+    # Sort sample
+    b = np.argsort(x)
+    
+    # Apply deterministic sampling by taking value at every 1/Ne quantile
+    cum_weight = np.concatenate(([0], np.cumsum(w[b])))
+    
+    offset = 0.0
+    base = 1 / (Ne - offset) / 2
+    
+    ind = np.zeros(Ne, dtype=int)
+    k = 1
+    for n in range(Ne):
+        frac = base + (n / (Ne - offset))
+        while cum_weight[k] < frac:
+            k += 1
+        ind[n] = k - 1
+    return ind
+
+
+
+def gaussian_L(x, y, r):
+    return np.exp(-(y - x)**2 / (2 * r))
+
+def kddm(x, xo, w):
+    Ne = len(w)
+    sig = (max(x) - min(x)) / 6
+    npoints = 300
+    
+    xmin = min(min(xo), min(x))
+    xmax = max(max(xo), max(x))
+    
+    xd = np.linspace(xmin, xmax, npoints)
+    qf = np.zeros_like(x)
+    cdfxa = np.zeros_like(xd)
+    
+    for n in range(Ne):
+        qf += (1 + erf((x - x[n]) / (np.sqrt(2) * sig))) / (2 * Ne)
+        cdfxa += w[n] * (1 + erf((xd - xo[n]) / (np.sqrt(2) * sig))) / 2
+    
+    interp_func = interp1d(cdfxa, xd, bounds_error=False, fill_value="extrapolate")
+    xa = interp_func(qf)
+    
+    if np.var(xa) < 1e-8:
+        print("Warning: Low variance detected in xa")
+    
+    if np.isnan(qf).any():
+        print("Warning: NaN values detected in qf")
+    
+    return xa
