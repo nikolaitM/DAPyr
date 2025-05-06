@@ -62,8 +62,8 @@ l05_c = 2.5
 #Singular Vector Parameters
 #Used for configuring singular vector calculation
 ############
-doSV = 0 #Determines if SVs are calculated (0: False, 1: True)
-stepSV = 1 #How many timesteps to skip between SV calculations
+doSV = 1 #Determines if SVs are calculated (0: False, 1: True)
+stepSV = 5 #How many timesteps to skip between SV calculations
 forecastSV = 4 #Optimization time interval (in increments of dt) for SV calculation
 outputSV = './output/' #output directory for SV calculation files
 
