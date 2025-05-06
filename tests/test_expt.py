@@ -209,7 +209,10 @@ class TestMisc(unittest.TestCase):
         pass
 
     def test_SV(sefl):
-        pass
+        Nx, Ne = 40, 10 #Basic setup
+        xa = np.ones((Nx, Ne))
+        sv_xf = np.ones((Nx, Ne))
+        
 
 class TestDA(unittest.TestCase):
     def test_EnSRF(self):

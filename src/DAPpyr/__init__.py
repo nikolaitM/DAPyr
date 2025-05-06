@@ -12,6 +12,7 @@ from . import DA
 import xarray as xr
 import DAPpyr.Exceptions as dapExceptions
 import pickle
+import matplotlib.pyplot as plt
 
 
 class Expt:
@@ -157,6 +158,7 @@ class Expt:
             if self.getParam('saveEnsMean') != 0:
                   self.x_ensmean = np.zeros((Nx, T))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
+            self.rmse_prior = np.zeros((T,))
             self.spread = np.zeros((T,2)) #Spread of Expt Prio/Posterior
 
       #Modify the Experiment Parameters
@@ -210,7 +212,7 @@ class Expt:
             #Output Parameters
             self.miscParams['status'] = 'init'
             self.miscParams['output_dir'] = './'
-            self.miscParams['saveEns'] = 0
+            self.miscParams['saveEns'] = 1
             self.miscParams['saveEnsMean'] = 1
 
 
@@ -385,11 +387,85 @@ def loadExpt(file):
       expt._configModel()
       return expt
 
+def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plotEnsMean = False):
+      '''Plots the model truth, obs, ensembles, and ensemble mean at time T'''
+      if ax is None:
+            fig, ax = plt.subplots(1, 1, subplot_kw={'projection': '3d'})
+      #TODO Add check to make sure the expt ran before plotting
+      #TODO Add check to make sure plotting time is withtin
+      Nx = expt.getParam('Nx')
+      Ne = expt.getParam('Ne')
+      Nt = expt.getParam('T')
+      H = expt.getParam('H')
+      model_flag = expt.getParam('model_flag')
+      xf, xt, Y = expt.getStates()
+      if plotEnsMean:
+            x_ens = expt.x_ensmean[:, :T+1]
+      if plotEns:
+            x = expt.x_ens[:, :, :T+1]
+      if model_flag == 0:
+            #Model Truth
+            xs_t, ys_t, zs_t = xt[0, :T+1], xt[1, :T+1], xt[2, :T+1]
+            #Obs
+            #xs_y, ys_y, zs_y = copy.deepcopy(xs_t[:, -1]), copy.deepcopy(ys_t[:, -1]), copy.deepycopy(zs_t[:, -1])
 
-def runDA(expt: Expt):
+            if plotEns:
+                  xs, ys, zs = x[0, :, :].T, x[1, :, :].T, x[2, :, :].T
+            if plotEnsMean:
+                  xs_ens, ys_ens, zs_ens = x_ens[0, :], x_ens[1, :], x_ens[2, :]
+      else:
+            ts = np.linspace(0, 2*np.pi, Nx)
+            xs, ys = np.cos(ts), np.sin(ts)
+            #Ensemble
+            if plotEns:
+                  zs = x[:, :, -1]
+            if plotEnsMean:
+                  #Ensemble Mean
+                  xs_ens, ys_ens = xs, ys 
+                  zs_ens = x_ens[:, -1]
+
+            #Obs
+            xs_y, ys_y = np.matmul(H, xs[:, np.newaxis]), np.matmul(H, ys[:, np.newaxis])
+            zs_y = Y[:, T, 0]
+            
+            #Model Truth
+            xs_t, ys_t = xs, ys
+            zs_t = xt[:, T]
+      
+      #Plot Truth
+
+      if plotEns:
+            #Plot Ensemble Members
+            for n in range(Ne):
+                  if model_flag == 0:
+                        ax.plot3D(xs[:, n], ys[:, n], zs[:, n], c = 'grey', alpha = 0.5)
+                  else:
+                        ax.plot3D(xs, ys, zs[:, n], c = 'grey', alpha = 0.5)
+
+      #Truth
+      ax.plot3D(xs_t, ys_t, zs_t, 'blue', label = 'True')
+
+      #Ensemble Mean
+      if plotEnsMean:
+            ax.plot3D(xs_ens, ys_ens, zs_ens, c = 'red', label = 'Post. Mean')
+
+      if plotObs:
+            pass
+      if ax is None:
+            return fig, ax
+      else:
+            return ax
+      
+
+
+
+
+def runDA(expt: Expt, maxT = None, debug = False):
       #np.random.seed(1)
       # Load in all the variables I need
       Ne, Nx, T, dt = expt.getBasicParams()
+      if maxT is not None:
+            T = maxT
       numPool = expt.getParam('NumPool')
       #Obs Stuff
       var_y = expt.getParam('var_y')
@@ -416,6 +492,7 @@ def runDA(expt: Expt):
 
       e_flag = expt.getParam('error_flag')
       rmse = expt.rmse
+      rmse_prior = expt.rmse_prior
       spread = expt.spread
       if saveEns:
             x_ens = expt.x_ens
@@ -456,6 +533,7 @@ def runDA(expt: Expt):
       for t in range(T):
             #Observation
             xm = np.mean(xf, axis = -1)[:, np.newaxis]
+            rmse_prior[t] = np.sqrt(np.mean((xt[:, t] - xm)**2))
             spread[t, 0] = np.sqrt(np.mean(np.sum((xf - xm)**2, axis = -1)/(Ne - 1)))
             match h_flag:
                   case 0:

@@ -1,0 +1,75 @@
+#An example experiment file for configuring experiments for a basic Lorenz 96
+#experiment. 
+
+#Comments begining with '#' will be ignored
+
+#Name of the experiment 
+expt_name="L05_Ne100"
+
+###################
+#Basic Parameters: Used to configure the basic setup for an experiment
+##################
+T = 300 #Number of timesteps
+dt = 0.05 #Increment of each time step
+Ne = 100 #Number of ensemble members
+expt_flag = 0 #DA scheme used (0: EnSRF, 1: LPF, 2: StochEnKF)
+NumPool = 8 #Number of CPUS used for multiprocessing
+
+#######################
+#Observation Parameters: Used to configure how observations assimilated
+#######################
+h_flag = 0 #Observation Operator (0: Linear, 1: Quadratic, 2: Log-Normal)
+sig_y = 1 #Standard Deviation of observation error
+tau = 3 #Number of timesteps between data assimilation
+obf = 20 #Observation spatial frequency spacing between assimilated variables
+obb = 0 #Observation buffer: Number of variables to skip before starting to assimilate obs.
+
+############
+#Localization Parameters
+############
+localize=1 #Whether to include localization in DA (0: False, 1: True)
+roi_kf=0.001 #Radius of localization for kalman filters
+roi_pf=0.001 #Radius of localization for particle filters
+
+##########
+#Inflation
+##########
+inflation=1 #Whether to turn ON inflation (0: Off, 1: On)
+inf_flag=0 #Type of inflation (0: RTPS, 1: RTPP, 2: Anderson)
+gamma=0.00 #Inflation parameter for RTPS
+
+###############
+#Model Parameters: Used for determining what model is run
+model_flag = 2 #Model used (0: Lorenz 1963, 1: Lorenz 1996, 2: Lorenz 2005)
+##############
+#Lorenz 1963 Parameters
+s = 10
+r = 28
+b = 2.67
+
+#Lorenz 1996 Parameters
+F = 8
+
+#Lorenz 2005 Parameters
+l05_F = 15
+l05_Fe = 15
+l05_K = 32
+l05_I = 12
+l05_b = 10.0
+l05_c = 2.5
+
+############
+#Singular Vector Parameters
+#Used for configuring singular vector calculation
+############
+doSV = 1 #Determines if SVs are calculated (0: False, 1: True)
+stepSV = 3 #How many timesteps to skip between SV calculations
+forecastSV = 4 #Optimization time interval (in increments of dt) for SV calculation
+outputSV = './' #output directory for SV calculation files
+
+#Output Parameters
+#Used for determining what is outputted and saved for each experiment
+
+output_dir= './'
+saveEns=0 #Whether to save ensemble members at each timestep (0: False, 1: True)
+saveEnsMean=1 #Whether to save ensemble mean at each timestep (0: False, 1: True)
