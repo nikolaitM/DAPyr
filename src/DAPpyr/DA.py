@@ -1,6 +1,5 @@
 import numpy as np
 import copy
-from scipy.optimize import fmin
 from . import MISC
 
 def basic_pf_update(xm, hx, Y, var_y):
@@ -191,84 +190,92 @@ def lpf_update(x, hx, Y, var_y, H, C_pf, N_eff, gamma, min_res, maxiter, kddm_fl
     res_y = res_y - min_res
 
     #Beta stuff begins
+    while max_res > 0 and min_res < 1:
+        niter += 1
+        xo = x.copy()
+        hx = hx.squeeze()
+        hxo = copy.deepcopy(hx)
+        if len(hxo.shape) == 1:
+             hxo = hxo[None, :]
+        if len(hx.shape) == 1:
+             hx = hx[None, :]
+        
+        omega = np.ones((Nx, Ne))*(1/Ne) #Nx x Ne
+        omega_y = np.ones((Ny, Ne))*(1/Ne)
+        lomega = np.zeros_like(omega)
+        lomega_y = np.zeros_like(omega_y)
 
-    hxo = copy.deepcopy(hx) #From previous assimilated obs
-    xo = copy.deepcopy(x) #from previously assimilated obs cycle Nx x Ne
-    
-    omega = np.ones((Nx, Ne))*(1/Ne) #Nx x Ne
-    omega_y = np.ones((Ny, Ne))*(1/Ne)
-    lomega = np.zeros_like(omega)
-    lomega_y = np.zeros_like(omega_y)
+        d = (Y - hxo)**2/(2*var_y)
+        #d = d - np.min(d, axis = -1)[:, None]
+        #wo = np.exp(-d) + 1E-40
+        wo = np.exp(-d)
+        wo = wo/np.sum(wo, axis = -1)[:, None]
 
-    d = (Y - hxo)**2/(2*var_y)
-    #d = d - np.min(d, axis = -1)[:, None]
-    #wo = np.exp(-d) + 1E-40
-    wo = np.exp(-d)
-    wo = wo/np.sum(wo, axis = -1)[:, None]
+        if np.any(np.isnan(wo)):
+            e_flag = 1
+            return np.nan, e_flag
 
-    if np.any(np.isnan(wo)):
-        e_flag = 1
-        return np.nan, e_flag
+        beta_y, res_y = get_reg(Ny, Ne, HCH, wo, N_eff, res_y, beta_max)
+        beta, res = get_reg(Nx, Ne, C_pf, wo, N_eff, res, beta_max)
+        wo_ind = np.where(1 < 0.98*Ne*np.sum(wo**2, axis = -1))[0]
 
-    beta_y, res_y = get_reg(Ny, Ne, HCH, wo, N_eff, res_y, beta_max)
-    beta, res = get_reg(Nx, Ne, C_pf, wo, N_eff, res, beta_max)
-    wo_ind = np.where(1 < 0.98*Ne*np.sum(wo**2, axis = -1))[0]
+        #Obs loop
+        for i in wo_ind:
+            beta_ind = np.where(beta != beta_max)[0]
+            wt = Ne*wo[i, :] - 1 #Ne Array
+            C = C_pf[i, beta_ind] #Nxb array
+            dum = np.zeros((len(beta_ind), Ne))
+            if np.any(C == 1.0):
+                dum[C==1.0, :] = np.log(Ne*wo[i, :]) 
+            dum[C!= 1.0, :] = np.log(np.matmul(C[C!=1.0][:, None], wt[None, :]) + 1)
+            lomega[beta_ind, :] = lomega[beta_ind, :] - dum
+            lomega[beta_ind, :] = lomega[beta_ind, :] - np.min(lomega[beta_ind, :], axis = -1)[:, None]
 
-    #Obs loop
-    for i in wo_ind:
-        beta_ind = np.where(beta != beta_max)[0]
-        wt = Ne*wo[i, :] - 1 #Ne Array
-        C = C_pf[i, beta_ind] #Nxb array
-        dum = np.zeros((len(beta_ind), Ne))
-        if np.any(C == 1.0):
-            dum[C==1.0, :] = np.log(Ne*wo[i, :]) 
-        dum[C!= 1.0, :] = np.log(np.matmul(C[C!=1.0][:, None], wt[None, :]) + 1)
-        lomega[beta_ind, :] = lomega[beta_ind, :] - dum
-        lomega[beta_ind, :] = lomega[beta_ind, :] - np.min(lomega[beta_ind, :], axis = -1)[:, None]
+            beta_ind = np.where(beta_y != beta_max)[0]
+            wt = Ne*wo[i, :] - 1 #Ne Array
+            C = HCH[i, beta_ind] #Nxb array
+            dum = np.zeros((len(beta_ind), Ne))
+            if np.any(C == 1.0):
+                dum[C==1.0, :] = np.log(Ne*wo[i, :]) 
+            dum[C!= 1.0, :] = np.log(np.matmul(C[C!=1.0][:, None], wt[None, :]) + 1)
+            lomega_y[beta_ind, :] = lomega_y[beta_ind, :] - dum
+            lomega_y[beta_ind, :] = lomega_y[beta_ind, :] - np.min(lomega_y[beta_ind, :], axis = -1)[:, None]
 
-        beta_ind = np.where(beta_y != beta_max)[0]
-        wt = Ne*wo[i, :] - 1 #Ne Array
-        C = HCH[i, beta_ind] #Nxb array
-        dum = np.zeros((len(beta_ind), Ne))
-        if np.any(C == 1.0):
-            dum[C==1.0, :] = np.log(Ne*wo[i, :]) 
-        dum[C!= 1.0, :] = np.log(np.matmul(C[C!=1.0][:, None], wt[None, :]) + 1)
-        lomega_y[beta_ind, :] = lomega_y[beta_ind, :] - dum
-        lomega_y[beta_ind, :] = lomega_y[beta_ind, :] - np.min(lomega_y[beta_ind, :], axis = -1)[:, None]
+            #Normalize
+            #lomega is Nx x Ne
+            #omega needs to be Nx x Ne
 
-        #Normalize
-        #lomega is Nx x Ne
-        #omega needs to be Nx x Ne
+            omega = np.exp(-lomega / beta[:, None])
+            omega_y =  np.exp(-lomega_y / beta_y[:, None])
 
-        omega = np.exp(-lomega / beta[:, None])
-        omega_y =  np.exp(-lomega_y / beta_y[:, None])
+            omegas_y = np.sum(omega_y, axis = -1)[:, None] #Sum over Ensemble Members
+            omegas = np.sum(omega, axis = -1)[:, None]
 
-        omegas_y = np.sum(omega_y, axis = -1)[:, None] #Sum over Ensemble Members
-        omegas = np.sum(omega, axis = -1)[:, None]
+            omega = omega/omegas
+            xmpf = np.sum(omega*xo, axis = -1)[:, None]
+            omega_y = omega_y/ omegas_y
+            hxmpf =np.sum(omega_y*hxo, axis = -1)[:, None]
 
-        omega = omega/omegas
-        xmpf = np.sum(omega*xo, axis = -1)[:, None]
-        omega_y = omega_y/ omegas_y
-        hxmpf =np.sum(omega_y*hxo, axis = -1)[:, None]
+            if (1 > 0.98*Ne*sum(omega_y[i, :]**2)):
+                continue
 
-        if (1 > 0.98*Ne*sum(omega_y[i, :]**2)):
-            continue
+            var_a = np.sum(omega*(xo - xmpf)**2, axis = -1)[:, None]
+            var_a_y = np.sum(omega_y*(hxo - hxmpf)**2, axis = -1)[:, None]
 
-        var_a = np.sum(omega*(xo - xmpf)**2, axis = -1)[:, None]
-        var_a_y = np.sum(omega_y*(hxo - hxmpf)**2, axis = -1)[:, None]
+            norm = (1 - np.sum(omega**2, axis = -1))[:, None]
+            var_a = var_a/norm
+            norm = (1 - np.sum(omega_y**2, axis = -1))[:, None]
+            var_a_y = var_a_y/norm
+            #ks = np.random.choice(Ne, Ne, p = omega_y[i, :], replace=True)
+            ks = MISC.sampling(hxo[i, :], omega_y[i, :], Ne)
+            x = pf_merge(x, xo[:, ks], C_pf[i, :], Ne, xmpf, var_a, gamma)
+            hx = pf_merge(hx, hxo[:, ks], HCH[i, :], Ne, hxmpf, var_a_y, gamma)
 
-        norm = (1 - np.sum(omega**2, axis = -1))[:, None]
-        var_a = var_a/norm
-        norm = (1 - np.sum(omega_y**2, axis = -1))[:, None]
-        var_a_y = var_a_y/norm
-        #ks = np.random.choice(Ne, Ne, p = omega_y[i, :], replace=True)
-        ks = MISC.sampling(hxo[i, :], omega_y[i, :], Ne)
-        x = pf_merge(x, xo[:, ks], C_pf[i, :], Ne, xmpf, var_a, gamma)
-        hx = pf_merge(hx, hxo[:, ks], HCH[i, :], Ne, hxmpf, var_a_y, gamma)
-    
-    if kddm_flag == 1:
-        pass
-
+        if kddm_flag == 1:
+            pass
+        max_res = np.max(res)
+        if niter == maxiter:
+            break
     return x, e_flag
 
 def pf_merge(x, xs, loc, Ne, xmpf, var_a, alpha):

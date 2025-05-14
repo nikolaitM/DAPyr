@@ -13,8 +13,6 @@ import xarray as xr
 import DAPpyr.Exceptions as dapExceptions
 import pickle
 import matplotlib.pyplot as plt
-from numbalsoda import lsoda
-
 
 class Expt:
       def __init__(self, name, params = None, _empty = False):
@@ -82,9 +80,13 @@ class Expt:
             #Multiprocessing
             xf_0 = xt_0[:, np.newaxis] + 1*np.random.randn(Nx, Ne)
             pfunc = partial(MODELS.model, dt = dt, T = 100, funcptr=funcptr)
-            with mp.Pool(NumPool) as pool:
+            
+            with mp.get_context('fork').Pool(NumPool) as pool:
                   xf_0 = np.stack(pool.map(pfunc, [xf_0[:, i] for i in range(Ne)]), axis = -1)
             
+            #for n in range(Ne):
+            #      xf_0[:, n] = MODELS.model(xf_0[:, n], dt, 100, funcptr)
+
             #Create Model Truth
             xt = np.zeros((Nx, T))
             xt[:,0] = MODELS.model(xt_0, dt, 100, funcptr)
@@ -540,7 +542,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
       if saveForecastEns:
             x_fore_ens = expt.x_fore_ens
       #Open pool      
-      pool = mp.Pool(numPool)
+      pool = mp.get_context('fork').Pool(numPool)
       pfunc = partial(MODELS.model, dt = dt, T = tau, funcptr = funcptr)
 
       #Misc Stuff
