@@ -1,16 +1,19 @@
 import numpy as np
 import copy
-from numbalsoda import lsoda_sig, lsoda
+from numbalsoda import lsoda_sig, solve_ivp
 from numba import cfunc
 import numba as nb
 
 def model(x, dt, T, funcptr):
-      tspan = np.array([0, dt])
+      tspan = np.array([0, dt*T])
       usol = copy.deepcopy(x)
-      for t in range(T):
-            usol, success = lsoda(funcptr, usol, tspan)
-            usol = usol[-1, :]
-      return usol 
+      tmp = solve_ivp(funcptr, tspan, usol, tspan, rtol = 1e-9, atol = 1e-30)
+      # tmp, success = lsoda(funcptr, usol, tspan)
+      #for t in range(T):
+      #      tmp, success = lsoda(funcptr, usol, tspan)
+      #      usol = tmp[-1, :]
+      #return usol 
+      return tmp.y[-1, :]
 
 def make_rhs_l63(kwargs):
       s = kwargs['s']
@@ -33,6 +36,7 @@ def make_rhs_l96(kwargs):
             for i in range(Nx):
                   du[i] = tmp[i]
       return rhs
+
 def make_rhs_l05(kwargs):
       K = int(kwargs['l05_K'])
       I = int(kwargs['l05_I'])
