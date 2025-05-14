@@ -13,3 +13,8 @@ class MismatchObs(Exception):
       def __init__(self, Ny1, Ny2):
             self.message = 'Experiment Number of Obs do not match. {} != {}'.format(Ny1, Ny2)
             super().__init__(self.message)
+
+class MisMatchEnsSize(Exception):
+      def __init__(self, Ne1, Ne2):
+            self.message = 'Experiment Ensemble Size greater than Experiment copying from. {} > {}'.format(Ne1, Ne2)
+            super().__init__(self.message)
