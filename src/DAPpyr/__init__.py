@@ -13,10 +13,11 @@ import xarray as xr
 import DAPpyr.Exceptions as dapExceptions
 import pickle
 import matplotlib.pyplot as plt
+from numbalsoda import lsoda
 
 
 class Expt:
-      def __init__(self, name, params = None):
+      def __init__(self, name, params = None, _empty = False):
             #Expt Name
             self.exptname = name 
 
@@ -25,12 +26,20 @@ class Expt:
             self.obsParams = {}
             self.basicParams = {}
             self.miscParams = {}
+            self.states = {} #Dictionary to store all the model states
 
+  
+                    
             #Initial the default parameters of an experiment
             self._initBasic()
             self._initModel()
             self._initObs()
             self._initMisc()
+            #BUG When you create an empty experiment without doing the 
+            # update step, it can potentially mess up other function 
+            # I need to test what functions can be called
+            if _empty:
+                  return  
 
             #If additional changes to the parameters are specified, change them
             if params is not None:
@@ -79,6 +88,7 @@ class Expt:
             #Create Model Truth
             xt = np.zeros((Nx, T))
             xt[:,0] = MODELS.model(xt_0, dt, 100, funcptr)
+
             for t in range(T-1):
                   xt[:, t+1] = MODELS.model(xt[:, t], dt, tau, funcptr)
 
@@ -107,7 +117,6 @@ class Expt:
                         self.modelParams['rhs'] = MODELS.make_rhs_l05(self.modelParams['params'])
                         self.modelParams['Nx'] = 480
             self.modelParams['funcptr'] = self.modelParams['rhs'].address
-
       def _configObs(self):
             #Extra Observation stuff
             Nx = self.modelParams['Nx']
@@ -127,7 +136,6 @@ class Expt:
 
       def _updateParams(self):
             #Model Truth
-            self.states = {} #Dictionary to store all the model states
             model_flag = self.modelParams['model_flag']
             dt = self.basicParams['dt']
             Ne = self.basicParams['Ne']
@@ -155,6 +163,8 @@ class Expt:
 
             if self.getParam('saveEns') != 0:
                   self.x_ens = np.zeros((Nx, Ne, T))*np.nan #All Ensemble Members over time period
+            if self.getParam('saveForecastEns') !=0:
+                  self.x_fore_ens = np.zeros((Nx, Ne, T))
             if self.getParam('saveEnsMean') != 0:
                   self.x_ensmean = np.zeros((Nx, T))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
@@ -206,7 +216,7 @@ class Expt:
             self.miscParams['stepSV'] = 1 #how many timesteps to skip for each SV calculation
             self.miscParams['forecastSV'] = 4 # Optimization time interval for SV calculation
             self.miscParams['outputSV'] = './' #output directory for SV calculation files
-            
+            self.miscParams['storeCovar']= 0 #Store the covariances 
             self.miscParams['NumPool'] = 8
 
             #Output Parameters
@@ -214,18 +224,22 @@ class Expt:
             self.miscParams['output_dir'] = './'
             self.miscParams['saveEns'] = 1
             self.miscParams['saveEnsMean'] = 1
+            self.miscParams['saveForecastEns'] = 0
 
 
       def resetParams(self):
             self.__init__(self.exptname)
 
-      def modExpt(self, params : dict):
+      def modExpt(self, params : dict, exptname = None):
             #Check if updating ensemble spinup required
+            if exptname is not None:
+                  self.exptname = exptname
             updateRequired = False
             for key, val in params.items():
                   if self.basicParams.get(key) is not None:
                         self.basicParams[key] = val
-                        updateRequired = True
+                        if key != 'expt_flag':
+                              updateRequired = True
                   elif self.modelParams.get(key) is not None:
                         updateRequired = True
                         if key =='params':
@@ -323,20 +337,44 @@ class Expt:
                   return self.miscParams.get(param)
             else:
                   return None
+      def __deepcopy__(self, memo):
+            expt = type(self)("", None, _empty = True)
+            memo[id(self)] = expt
+            #Change 'rhs' and 'funcptr' because 
+            #they are incompatible with the deepycopy method
+            self.modelParams['rhs'] = ''
+            self.modelParams['funcptr'] = ''
+            for name, attr in self.__dict__.items():
+                  expt.__setattr__(name, copy.deepcopy(attr, memo))
+            self._configModel()
+            expt._configModel()
+            return expt
+
+      def __copy__(self):
+            expt = type(self)("", None, _empty = True)
+            expt.__dict__.update(self.__dict__)
+            return expt
+      
+
       def copyStates(self, expt):
             #Check if model is the same 
             Nx1, Nx2 = self.getParam('Nx'), expt.getParam('Nx')
             T1, T2 = self.getParam('T'), expt.getParam('T')
-            Ny1, Ny2 = self.getParam('Ny'), expt.getParam('Ny')
+            obf1, obf2 = self.getParam('obf'), expt.getParam('obf')
+            obb1, obb2 = self.getParam('obb'), expt.getParam('obb')
+            Ne1, Ne2 = self.getParam('Ne'), expt.getParam('Ne')
             if Nx1 != Nx2:
                   raise dapExceptions.MismatchModelSize(Nx1, Nx2)
             elif T1 > T2:
                   raise dapExceptions.MismatchTimeSteps(T1, T2)
-            elif Ny1 != Ny2:
-                  raise dapExceptions.MismatchObs(Ny1, Ny2)
+            elif (obf1 != obf2) or (obb1 != obb2):
+                  #TODO Change Mismatch Obs message to display info about obf and obb not Ny
+                  raise dapExceptions.MismatchObs(obf1, obf2)
+            elif Ne1 > Ne2:
+                  raise dapExceptions.MisMatchEnsSize(Ne1, Ne2)
             else:
                   xf_0, xt, Y = expt.getStates()
-                  self.states['xf_0'] = copy.deepcopy(xf_0)
+                  self.states['xf_0'] = copy.deepcopy(xf_0[:, :Ne1])
                   self.states['xt'] = copy.deepcopy(xt)[:, :T1]
                   self.states['Y'] = copy.deepcopy(Y)[:, :T1, :]
       def saveExpt(self, outputdir = None):
@@ -456,8 +494,8 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
       else:
             return ax
       
-
-
+def copyExpt(expt:Expt):
+      return copy.deepcopy(expt)
 
 
 def runDA(expt: Expt, maxT = None, debug = False):
@@ -489,6 +527,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
       params, funcptr = expt.getParam('params'), expt.getParam('funcptr')
       saveEns = expt.getParam('saveEns')
       saveEnsMean = expt.getParam('saveEnsMean')
+      saveForecastEns = expt.getParam('saveForecastEns')
 
       e_flag = expt.getParam('error_flag')
       rmse = expt.rmse
@@ -498,6 +537,8 @@ def runDA(expt: Expt, maxT = None, debug = False):
             x_ens = expt.x_ens
       if saveEnsMean:
             x_ensmean = expt.x_ensmean
+      if saveForecastEns:
+            x_fore_ens = expt.x_fore_ens
       #Open pool      
       pool = mp.Pool(numPool)
       pfunc = partial(MODELS.model, dt = dt, T = tau, funcptr = funcptr)
@@ -510,6 +551,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
             stepSV = expt.getParam('stepSV')
             forecastSV = expt.getParam('forecastSV')
             outputSV = expt.getParam('outputSV')
+            storeCovar = expt.getParam('storeCovar')
                   #SV output variables
             xf_sv = np.zeros((Nx, Ne))
             sv_meta = {'expt_name': expt.exptname,
@@ -524,6 +566,10 @@ def runDA(expt: Expt, maxT = None, debug = False):
                   'evolved': (['t', 'Nx', 'mem'], np.zeros((sv_t, Nx, Ne))*np.nan),
                   'energy': (['t', 'mem'], np.zeros((sv_t, Ne))*np.nan),
                   'evalue': (['t', 'mem'], np.zeros((sv_t, Ne))*np.nan)}
+            
+            if storeCovar != 0:
+                  sv_covar = {'Xa': (['t', 'Nx','mem'], np.zeros((sv_t, Nx, Ne))*np.nan), 
+                                            'Xf': (['t', 'Nx','mem'], np.zeros((sv_t, Nx, Ne))*np.nan)}
             svpfunc = partial(MODELS.model, dt = dt, T = forecastSV, funcptr = funcptr)
 
       # Time Loop
@@ -533,8 +579,10 @@ def runDA(expt: Expt, maxT = None, debug = False):
       for t in range(T):
             #Observation
             xm = np.mean(xf, axis = -1)[:, np.newaxis]
-            rmse_prior[t] = np.sqrt(np.mean((xt[:, t] - xm)**2))
+            rmse_prior[t] = np.sqrt(np.mean((xt[:, t] - xm[:, 0])**2))
             spread[t, 0] = np.sqrt(np.mean(np.sum((xf - xm)**2, axis = -1)/(Ne - 1)))
+            if saveForecastEns:
+                  x_fore_ens[:, :, t] = xf
             match h_flag:
                   case 0:
                         hx = np.matmul(H, xf)
@@ -549,19 +597,25 @@ def runDA(expt: Expt, maxT = None, debug = False):
 
             qaqcpass = np.zeros((Ny,))
             #qaqc pass
-            for i in range(Ny):
-                  d = np.abs((Y[i, t, :] - hxm[i, :])[0])
-                  if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
-                        qaqcpass[i] = 1
+            #for i in range(Ny):
+            #      d = np.abs((Y[i, t, :] - hxm[i, :])[0])
+            #      if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
+            #            qaqcpass[i] = 1
             #Data Assimilation
             match expt_flag:
                   case 0: #Deterministic EnKF
                         xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, Y[:, t], C_kf, HC_kf, var_y, gamma, e_flag, qaqcpass)
                         #xa = enkf_update(xf, hx, xm, hxm, Y[:, t], var_y)
                   case 1: #LPF
-                        xa, e_flag = DA.pf_update(xf, hx, Y[:, t, :].T, C_pf, HC_pf, Nt_eff*Ne, min_res, mixing_gamma, var_y, kddm_flag, qaqcpass, maxiter)
-                        #xa = DA.pf_update(xf, hx, Y[:, t], var_y)
-                        #xa = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C_pf, Nt_eff*Ne, mixing_gamma)
+
+                        pf_flag = 0
+
+                        match pf_flag:
+                              case 0:
+                                    xa, e_flag = DA.pf_update(xf, hx, Y[:, t, :].T, C_pf, HC_pf, Nt_eff*Ne, min_res, mixing_gamma, var_y, kddm_flag, qaqcpass, maxiter)
+                        #xa = DA.pf_update(xf, hx, Y[:, t], var_y)      
+                              case 1:
+                                    xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C_pf, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
                   case 2: # Stochastic EnKF
                         xa = DA.StochEnKF_update(xf, hx, xm ,hxm, Y[:, t], var_y)
                   case 3: #Nothing
@@ -584,6 +638,9 @@ def runDA(expt: Expt, maxT = None, debug = False):
                   #for n in range(Ne):
                   #      xf_sv[:, n] = MODELS.model(xa[:, n], dt, forecastSV, funcptr)
                   sv_data['initial'][1][countSV, :, :], sv_data['evolved'][1][countSV, :, :], sv_data['energy'][1][countSV, :], sv_data['evalue'][1][countSV, :] = MISC.calc_SV(xa, xf_sv)
+                  if storeCovar != 0:
+                        sv_covar['Xa'][1][countSV, :, :] = xa
+                        sv_covar['Xf'][1][countSV, :, :] = xf_sv
                   countSV+=1                  
 
             rmse[t] = np.sqrt(np.mean((xt[:, t] - np.mean(xa, axis = -1))**2))
@@ -598,12 +655,15 @@ def runDA(expt: Expt, maxT = None, debug = False):
 
             #No multiprocessing
             #for n in range(Ne):
-            #      xf[:, n] = model(xa[:, n], dt, tau, funcptr)
+            #      tmp= copy.deepcopy(xa[:, n])
+            #      xf[:, n] = MODELS.model(tmp, dt, tau, funcptr)
       pool.close()
       # Save everything into a nice xarray format potentially
       if doSV:
             #Save everything into a netCDF here
             cdf = xr.Dataset(data_vars = sv_data, coords = sv_coords, attrs=sv_meta)
+            if storeCovar != 0:
+                  cdf = cdf.assign(sv_covar)
             cdf.to_netcdf('{}/SV_{}.cdf'.format(outputSV,expt.exptname), mode = 'w')
 
       #Output stuff

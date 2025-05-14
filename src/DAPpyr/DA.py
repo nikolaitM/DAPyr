@@ -3,7 +3,7 @@ import copy
 from scipy.optimize import fmin
 from . import MISC
 
-def pf_update(xm, hx, Y, var_y):
+def basic_pf_update(xm, hx, Y, var_y):
       Nx, Ne = xm.shape
       Ny = len(Y)
       xa = xm
@@ -77,55 +77,243 @@ def EnSRF_update(xf, hx, xm, hxm, y, HC, HCH, var_y, gamma, e_flag, qc):
       xp = xp*inf_factor[:, np.newaxis]
       return xm + xp, e_flag
 
+def find_beta(sum_exp, Neff):
+    #sum_exp is of size Ne
+    Ne = sum_exp.shape[0]
+    beta_max = np.max([1, 10*np.max(sum_exp)])
+    w = np.exp(-sum_exp)
+    ws = np.sum(w)
+    if ws > 0:
+        w = w/ws
+        Neff_init = 1/sum(w**2)
+    else:
+        Neff_init = 1
+    
+    if Neff == 1:
+        return
 
-def lpf_update(x, hx, Y, var_y, H, C_pf, N_eff, gamma):
-      Nx, Ne = x.shape
-      Ny = len(Y)
-      hx_prev = copy.deepcopy(hx) #From previous assimilated obs
-      x_prev = copy.deepcopy(x) #from previously assimilated obs cycle Nx x Ne
-      omega = np.ones((Nx, Ne))*(1/Ne) #Nx x Ne
-      beta = np.zeros((Ny,))
-      beta_carrot = np.zeros((Ny,))
-      #Beta stuff
-      for i in range(Ny):
-            d_carrot = Y[i, :] - hx[i, :] #Ne
-            def find_beta(b):
-                  return N_eff - ( ( np.sum( np.exp( (-1*(d_carrot**2))/(2*b*var_y) ) ) )**2 / ( np.sum( np.exp( -1*(d_carrot**2)/(b*var_y) ) ) ) )
-            min_f = fmin(find_beta, 1) #argmin here
-            beta_carrot[i] = min_f.item()
-            for k in range(Ny):
-                  beta[k] = beta[k] + (beta_carrot[i] - 1)*np.matmul(H, C_pf[i, :][:, np.newaxis])[k, 0]
-      #Obs loop
-      for i in range(Ny):
-            d_carrot = Y[i, :] - hx[i, :] #Ne
-            d_tilde = Y[i, :] - hx_prev[i, :] #Ne
-            w_carrot = np.exp((-1*(d_carrot**2))/2*beta[i]*var_y)#Ne
-            w_tilde = np.exp((-1*(d_tilde**2))/2*beta[i]*var_y) #Ne
+    if Neff_init < Neff or ws == 0:
+        ks, ke = 1, beta_max
+        tol = 1E-5
+        #Start Bisection Method
 
+        for i in range(1000):
+            w = np.exp(-sum_exp/ks)
+            w = w/np.sum(w)
+            fks = Neff - 1/np.sum(w**2)
+            if np.isnan(fks):
+                fks = Neff-1
             
-            W_carrot = np.sum(w_carrot)
-            W_tilde = np.sum(w_tilde)
+            w = np.exp(-sum_exp/ke)
+            w = w/np.sum(w)
+            fke = Neff - 1/np.sum(w**2)
 
-            w_carrot = w_carrot/W_carrot
-            w_tilde = w_tilde/W_tilde
+            km = (ke + ks)/2
+            w = np.exp(-sum_exp/km)
+            w = w/np.sum(w)
+            fkm = Neff - 1/np.sum(w**2)
+            if np.isnan(fkm):
+                fkm = Neff-1
+            if (ke-ks)/2 < tol:
+                break
 
-            ks = np.random.choice(Ne, Ne, p = w_tilde, replace=True)
-            x_tilde = x_prev[:, ks]
-            #C_pf is a Ny by Nx
-            Omega_carrot = np.sum(w_carrot[np.newaxis, :]*omega, axis = -1) #Nx
-            omega = omega*((np.matmul(C_pf[i, :][:, np.newaxis], (Ne*w_carrot[np.newaxis, :] -1)) + 1)/Ne) #Needs to be Nx x Ne
-            Omega = np.sum(omega, axis = -1) #Nx
-            omega = omega/Omega[:, np.newaxis]
+            if fkm*fks > 0:
+                ks = km
+            else:
+                ke = km
+            
+        beta = km
+        w = np.exp(-sum_exp/beta)
+        w = w/np.sum(w)
+        Nf = 1/np.sum(w**2)
+    else:
+        beta = 1
+    return beta
 
-            x_bar = np.sum(omega*x, axis = -1)[:, np.newaxis]
-            sigma2 = 1/(1 - np.sum(omega, axis = -1))*(np.sum(omega*(x_prev - x_bar)**2 , axis = -1)) #Nx
 
-            cs = (1 - C_pf[i, :])/(Omega_carrot*Ne*C_pf[i, :]) # Needs to be Nx
-            r1 = np.sqrt(sigma2/((1/(Ne - 1))*np.sum((x_tilde - x_bar + cs[:, np.newaxis]*(x_prev - x_bar))**2 , axis = -1))) #Nx
-            r2 = cs*r1
-            #Update Particles
-            x_prev = x_bar + gamma*r1*(x_tilde - x_bar) + (gamma*(r2 - 1) + 1)*(x_prev - x_bar)
-            hx_prev = np.matmul(H, x_prev)
+def get_reg(Nx, Ne, C, hw, Neff, res, beta_max):
+    beta = np.zeros((Nx, ))
+    res_ind = np.where(res > 0.0)[0]
+    beta[res <= 0.0] = beta_max
+    #hw is Ny x Ne
+    for i in res_ind:
+        wo = 0
+        dum = (Ne*hw - 1)*C[:, i, None]
+        #ind  = np.where(np.abs(dum) > 0.1)
+        #dum[ind] = np.log(dum[ind] + 1 + 1E-10) #Avoid -inf because of np.log([0.0])
+        dum = np.log(dum + 1)
+        wo = wo - np.sum(dum, axis = 0)
+        wo = wo - np.min(wo)
+        beta[i] = MISC.find_beta(wo, Neff)
+        if res[i] < 1/beta[i]:
+            beta[i] = 1/res[i]
+            res[i] = 0
+        else:
+            res[i] = res[i] - 1/beta[i]
+
+        beta[i] = np.min([beta[i], beta_max])
+    return beta, res
+
+
+    #Loop through each state variable
+    #If the residual has been reachs, set beta as just beta_max
+
+def lpf_update(x, hx, Y, var_y, H, C_pf, N_eff, gamma, min_res, maxiter, kddm_flag,  e_flag, qcpass):
+
+
+    #TODO Turn on qaqcpass
+    if np.sum(qcpass) == len(Y):
+        e_flag = 1
+        return np.nan, e_flag
+    
+    Nx, Ne = x.shape
+    HCH = np.matmul(C_pf, H.T)*(1 - 1e-5)
+
+    Y = Y[qcpass == 0, :]
+    hx = hx[qcpass == 0, :]
+    C_pf = C_pf[qcpass == 0, :]* (1 - 1e-5)
+    HCH = HCH[qcpass == 0, :]
+    HCH = HCH[:, qcpass == 0]
+    Ny = len(Y)
+    #TODO Remove obs that don't pass QAQC Here
+
+    max_res = 1.0
+    beta = np.ones((Nx,))
+    beta_y = np.ones((Ny,))
+    beta_max = 1e100
+    res = np.ones(beta.shape)
+    res_y = np.ones(beta_y.shape)
+    niter = 0
+    pf_infl = np.ones((Ny,))
+    res_infl = np.ones(pf_infl.shape)
+
+    res = res- min_res
+    res_y = res_y - min_res
+
+    #Beta stuff begins
+
+    hxo = copy.deepcopy(hx) #From previous assimilated obs
+    xo = copy.deepcopy(x) #from previously assimilated obs cycle Nx x Ne
+    
+    omega = np.ones((Nx, Ne))*(1/Ne) #Nx x Ne
+    omega_y = np.ones((Ny, Ne))*(1/Ne)
+    lomega = np.zeros_like(omega)
+    lomega_y = np.zeros_like(omega_y)
+
+    d = (Y - hxo)**2/(2*var_y)
+    #d = d - np.min(d, axis = -1)[:, None]
+    #wo = np.exp(-d) + 1E-40
+    wo = np.exp(-d)
+    wo = wo/np.sum(wo, axis = -1)[:, None]
+
+    if np.any(np.isnan(wo)):
+        e_flag = 1
+        return np.nan, e_flag
+
+    beta_y, res_y = get_reg(Ny, Ne, HCH, wo, N_eff, res_y, beta_max)
+    beta, res = get_reg(Nx, Ne, C_pf, wo, N_eff, res, beta_max)
+    wo_ind = np.where(1 < 0.98*Ne*np.sum(wo**2, axis = -1))[0]
+
+    #Obs loop
+    for i in wo_ind:
+        beta_ind = np.where(beta != beta_max)[0]
+        wt = Ne*wo[i, :] - 1 #Ne Array
+        C = C_pf[i, beta_ind] #Nxb array
+        dum = np.zeros((len(beta_ind), Ne))
+        if np.any(C == 1.0):
+            dum[C==1.0, :] = np.log(Ne*wo[i, :]) 
+        dum[C!= 1.0, :] = np.log(np.matmul(C[C!=1.0][:, None], wt[None, :]) + 1)
+        lomega[beta_ind, :] = lomega[beta_ind, :] - dum
+        lomega[beta_ind, :] = lomega[beta_ind, :] - np.min(lomega[beta_ind, :], axis = -1)[:, None]
+
+        beta_ind = np.where(beta_y != beta_max)[0]
+        wt = Ne*wo[i, :] - 1 #Ne Array
+        C = HCH[i, beta_ind] #Nxb array
+        dum = np.zeros((len(beta_ind), Ne))
+        if np.any(C == 1.0):
+            dum[C==1.0, :] = np.log(Ne*wo[i, :]) 
+        dum[C!= 1.0, :] = np.log(np.matmul(C[C!=1.0][:, None], wt[None, :]) + 1)
+        lomega_y[beta_ind, :] = lomega_y[beta_ind, :] - dum
+        lomega_y[beta_ind, :] = lomega_y[beta_ind, :] - np.min(lomega_y[beta_ind, :], axis = -1)[:, None]
+
+        #Normalize
+        #lomega is Nx x Ne
+        #omega needs to be Nx x Ne
+
+        omega = np.exp(-lomega / beta[:, None])
+        omega_y =  np.exp(-lomega_y / beta_y[:, None])
+
+        omegas_y = np.sum(omega_y, axis = -1)[:, None] #Sum over Ensemble Members
+        omegas = np.sum(omega, axis = -1)[:, None]
+
+        omega = omega/omegas
+        xmpf = np.sum(omega*xo, axis = -1)[:, None]
+        omega_y = omega_y/ omegas_y
+        hxmpf =np.sum(omega_y*hxo, axis = -1)[:, None]
+
+        if (1 > 0.98*Ne*sum(omega_y[i, :]**2)):
+            continue
+
+        var_a = np.sum(omega*(xo - xmpf)**2, axis = -1)[:, None]
+        var_a_y = np.sum(omega_y*(hxo - hxmpf)**2, axis = -1)[:, None]
+
+        norm = (1 - np.sum(omega**2, axis = -1))[:, None]
+        var_a = var_a/norm
+        norm = (1 - np.sum(omega_y**2, axis = -1))[:, None]
+        var_a_y = var_a_y/norm
+        #ks = np.random.choice(Ne, Ne, p = omega_y[i, :], replace=True)
+        ks = MISC.sampling(hxo[i, :], omega_y[i, :], Ne)
+        x = pf_merge(x, xo[:, ks], C_pf[i, :], Ne, xmpf, var_a, gamma)
+        hx = pf_merge(hx, hxo[:, ks], HCH[i, :], Ne, hxmpf, var_a_y, gamma)
+    
+    if kddm_flag == 1:
+        pass
+
+    return x, e_flag
+
+def pf_merge(x, xs, loc, Ne, xmpf, var_a, alpha):
+    if np.all(loc == 1):
+        xmpf = np.mean(xs, axis = -1)[:, None]
+        var_a = np.var(xs, axis = -1)[:, None]
+    c = (1-loc)/loc
+    xs = xs - xmpf
+    x = x - xmpf
+    var_a = var_a[:, 0]
+    c2 = c**2
+    v1 = np.sum(xs**2, axis = -1)
+    v2 = np.sum(x**2, axis = -1)
+    v3 = np.sum(x*xs, axis = -1)
+
+    r1 = v1 + c2*v2 + 2*c*v3
+    r2 = c2/r1
+
+    r1 = alpha*np.sqrt((Ne-1)*var_a/r1)
+    r2 = np.sqrt((Ne-1)*var_a*r2)
+
+    if alpha < 1:
+        m1 = np.mean(xs, axis = -1)
+        m2 = np.mean(x, axis = -1)
+        v1 = v1 - Ne*(m1**2)
+        v2 = v2 - Ne*(m2**2)
+        v3 = v3 - Ne*(m1*m2)
+        T1 = v2
+        T2 = 2*(r1*v3 + r2*v2)
+        T3 = v1*(r1**2) + v2*(r2**2) + 2*v3*r1*r2 - (Ne-1)*var_a
+        alpha2 = (-T2+np.sqrt((T2**2) - 4*T1*T3))/(2*T1)
+        r2 = r2+alpha2
+
+    xa = xmpf + r1[:, None]*xs + r2[:, None]*x
+    pfm = (np.sum(xa, axis = -1)/Ne)[:, None]
+    xa = xmpf + (xa - pfm)
+
+    nanind = np.where(np.isnan(xa))
+    xa[nanind] = xmpf[nanind[0], 0] + xs[nanind]
+
+    return xa
+
+
+
+
 
 
 def pf_update(
@@ -141,9 +329,11 @@ def pf_update(
     # the GSI implementation of this code,
     # which does everything in single precision, in
     # which case it is useful to stabilize the filter.
+    
     HC =  HCo * (1 - 1e-5)
     HCH = HCHo * (1 - 1e-5)
 
+    
     e_flag = 0
     # I haven't implemented any QC checks, so qcpass is always
     # 0 everywhere in my code.
@@ -151,7 +341,7 @@ def pf_update(
         return x, 1
 
     Nx, Ne = x.shape
-    y = y[:,qcpass == 0]
+    y = y[: , qcpass == 0]
     hx = hx[qcpass == 0, :]
     HC = HC[qcpass == 0, :]
     HCH = HCH[qcpass == 0, :]
@@ -182,7 +372,11 @@ def pf_update(
 
         xo = x.copy()
         hx = hx.squeeze()
-        hxo = hx.copy()
+        hxo = copy.deepcopy(hx)
+        if len(hxo.shape) == 1:
+             hxo = hxo[None, :]
+        if len(hx.shape) == 1:
+             hx = hx[None, :]
 
         # weighing matrices that will store
         # log of weights and normal weights,

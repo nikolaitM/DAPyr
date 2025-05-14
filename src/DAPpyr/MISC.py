@@ -98,6 +98,40 @@ def find_beta(sum_exp, Neff):
     return beta
 
 
+'''def sampling(x, w, Ne):
+    ind = np.zeros((Ne,))
+    b = np.argsort(x)
+    a = x[b]
+    cum_weight = np.zeros((w.shape[0] + 1,))
+    cum_weight[1:] = np.cumsum(w[b])
+    offset = 0.0
+    base = 1/(Ne - offset)/2
+
+    k = 1
+    for n in range(Ne):
+        frac = base + (n)/(Ne - offset)
+
+        flag = 0
+        while flag==0:
+            if (cum_weight[k-1] < frac) and (frac <= cum_weight[k]):
+                ind[n] = k-1
+                flag = 1
+            else:
+                k = k+1
+    ind = ind.astype(np.int64)
+    ind = b[ind]
+    ind2 = ind*0
+    for n in range(Ne):
+        if sum(ind == n) != 0:
+            ind2[n] = n
+            dum = np.where(ind == n)[0]
+            ind[dum[0]] = []
+    
+    ind0 = np.where(ind2 == 0)[0]
+    ind2[ind0] = ind
+    ind = ind2
+    return ind
+'''
 def get_reg(Nx, Ny, Ne, C, hw, Neff, res, beta_max):
     # find next regularization coefficient for the current
     # tempering step; uses precomputed particle weights
@@ -163,12 +197,27 @@ def sampling(x, w, Ne):
         while cum_weight[k] < frac:
             k += 1
         ind[n] = k - 1
+    ind = b[ind]
+
+    # Replace removed particles with duplicated particles
+    ind2 = -999*np.ones(Ne, dtype=int)
+    for n in range(Ne):
+        if np.sum(ind == n) != 0:
+            ind2[n] = n
+            dum = np.where(ind == n)[0]
+            ind = np.delete(ind, dum[0])
+    
+
+    ind0 = np.where(ind2 == -999)[0]
+    ind2[ind0] = ind
+    ind = ind2
+    
     return ind
 
 
 
 def gaussian_L(x, y, r):
-    return np.exp(-(y - x)**2 / (2 * r))
+    return np.exp(-(y - x)**2 / (2 * r)).item()
 
 def kddm(x, xo, w):
     Ne = len(w)
