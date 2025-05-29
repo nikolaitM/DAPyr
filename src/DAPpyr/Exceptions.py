@@ -10,8 +10,8 @@ class MismatchTimeSteps(Exception):
             super().__init__(self.message)
 
 class MismatchObs(Exception):
-      def __init__(self, Ny1, Ny2):
-            self.message = 'Experiment Number of Obs do not match. {} != {}'.format(Ny1, Ny2)
+      def __init__(self, obf1, obf2):
+            self.message = 'Experiment Obs Frequencies do not match. {} != {}'.format(obf1, obf2)
             super().__init__(self.message)
 
 class MisMatchEnsSize(Exception):
