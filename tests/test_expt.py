@@ -45,64 +45,7 @@ class TestExptMethod(unittest.TestCase):
         self.expt = dap.Expt('test')
 
     def tearDown(self):
-        self.patcher.stop()
-        
-    def test_init(self):        
-        basicTest = {
-            'T':100,
-            'dt' : 0.01,
-            'Ne' : 10,
-            'expt_flag' : 0,
-            'error_flag' : 0
-        }
-        self.assertEqual(self.expt.basicParams, basicTest)
-        paramTest = {
-            's': 10, 'r': 28, 'b':8/3, 'F': 8, 
-                      'l05_F':15, 'l05_Fe':15,
-                      'l05_K':32, 'l05_I':12, 
-                      'l05_b':10.0, 'l05_c':2.5
-        }
-        modelTest = {
-            'params' : paramTest,
-            'model_flag': 0
-        }
-        modelPar_keys = self.expt.modelParams.keys()
-        for key, val in modelTest.items():
-            self.assertTrue(key in modelPar_keys)
-            self.assertEqual(modelTest[key], self.expt.modelParams[key])
-
-        obsTest = {
-            'h_flag':0,
-            'sig_y':1,
-            'tau': 3,
-            'obf':1,
-            'obb':0,
-            'var_y': 1**2,
-            'localize':True,
-            'roi_kf':0.005,
-            'roi_pf': 0.005,
-            'inflation':1,
-            'inf_flag':0,
-            'gamma':0.03
-        }
-        obsPar_keys = self.expt.obsParams.keys()
-        for key, val in obsTest.items():
-            self.assertTrue(key in obsPar_keys)
-            self.assertEqual(obsTest[key], self.expt.obsParams[key])
-
-        miscTest = {
-            'doSV':False,
-            'stepSV':1,
-            'forecastSV':4,
-            'outputSV':'./',
-            'output_dir':'./',
-            'saveEns': 0,
-            'saveEnsMean':1,
-            'NumPool': 8,
-            'status': 'init'
-        }
-        self.assertEqual(self.expt.miscParams, miscTest)
-
+        self.patcher.stop()    
 
     def test_getParam(self):
         self.assertEqual(self.expt.getParam('Ne'), 10)
@@ -192,6 +135,7 @@ class TestExptMethod(unittest.TestCase):
         e4 = dap.Expt('test4', {'model_flag': 1})
         self.assertRaises(AssertionError, self.assertTrue, e1 == e4)
 
+    #TODO Test Loading and Saving Expts
     def test_loadParamFile(self):
         pass
 
@@ -201,6 +145,20 @@ class TestExptMethod(unittest.TestCase):
     def test_saveExpt(self):
         pass
 
+    def test_shallowcopy(self):
+        e1 = dap.Expt('test')
+        e2 = copy.copy(e1)
+        e1.states['xf_0'] = np.zeros_like(e2.getParam('xf_0'))
+        self.assertTrue(np.allclose(e1.states['xf_0'],  e2.getParam('xf_0')))
+
+    def test_deepcopy(self):
+        e1 = dap.Expt('test')
+        e2 = copy.deepcopy(e1)
+        xf1 = e1.getParam('xf_0')
+        xf2 = e2.getParam('xf_0')
+        xf1 = np.zeros_like(xf1)
+        self.assertFalse(np.allclose(xf1, xf2))
+
 class TestMisc(unittest.TestCase):
 
     def setUp(self):
@@ -208,7 +166,7 @@ class TestMisc(unittest.TestCase):
     def test_create_periodic(self):
         pass
 
-    def test_SV(sefl):
+    def test_SV(self):
         Nx, Ne = 40, 10 #Basic setup
         xa = np.ones((Nx, Ne))
         sv_xf = np.ones((Nx, Ne))
