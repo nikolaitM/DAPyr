@@ -15,7 +15,7 @@ import pickle
 import matplotlib.pyplot as plt
 
 class Expt:
-      def __init__(self, name, params = None, _empty = False):
+      def __init__(self, name, params = None):
             #Expt Name
             self.exptname = name 
 
@@ -26,22 +26,17 @@ class Expt:
             self.miscParams = {}
             self.states = {} #Dictionary to store all the model states
 
-  
                     
             #Initial the default parameters of an experiment
             self._initBasic()
             self._initModel()
             self._initObs()
             self._initMisc()
-            #BUG When you create an empty experiment without doing the 
-            # update step, it can potentially mess up other function 
-            # I need to test what functions can be called
-            if _empty:
-                  return  
+
 
             #If additional changes to the parameters are specified, change them
             if params is not None:
-                  self.modExpt(params)
+                  self.modExpt(params, reqUpdate=True)
             else:
             #If not, update and initalize basic ensemble member states
                   self._updateParams()
@@ -100,7 +95,7 @@ class Expt:
                   case 0:
                         Y = np.matmul(H,(xt + dum))[:, :, np.newaxis]
                   case 1:
-                        Y = np.matmul(H, (xt + dum)**2)[:, :, np.newaxis]
+                        Y = np.matmul(H, (xt**2 + dum))[:, :, np.newaxis]
                   case 2:
                         Y = np.matmul(H, np.log(np.abs(xt + dum)))[:, :, np.newaxis]
 
@@ -188,7 +183,7 @@ class Expt:
             self.obsParams['obb'] = 0   #Observation buffer: number of variables to skip when generating obs
             self.obsParams['var_y'] = self.obsParams['sig_y']**2
             #Localization
-            self.obsParams['localize'] = True
+            self.obsParams['localize'] = 1
             #EnKF Parameters
             self.obsParams['roi_kf'] = 0.005
             self.obsParams['inflation'] = 1
@@ -214,12 +209,6 @@ class Expt:
       def _initMisc(self):
             #Parameters for Miscellaneous calculations
             #Singular Vector Parameters
-            self.miscParams['doSV'] = False #0 for false, 1 for true
-            self.miscParams['stepSV'] = 1 #how many timesteps to skip for each SV calculation
-            self.miscParams['forecastSV'] = 4 # Optimization time interval for SV calculation
-            self.miscParams['outputSV'] = './' #output directory for SV calculation files
-            self.miscParams['storeCovar']= 0 #Store the covariances 
-            self.miscParams['NumPool'] = 8
 
             #Output Parameters
             self.miscParams['status'] = 'init'
@@ -228,14 +217,21 @@ class Expt:
             self.miscParams['saveEnsMean'] = 1
             self.miscParams['saveForecastEns'] = 0
 
+            self.miscParams['doSV'] = 0 #0 for false, 1 for true
+            self.miscParams['stepSV'] = 1 #how many timesteps to skip for each SV calculation
+            self.miscParams['forecastSV'] = 4 # Optimization time interval for SV calculation
+            self.miscParams['outputSV'] = self.getParam('output_dir') #output directory for SV calculation files
+            self.miscParams['storeCovar']= 0 #Store the covariances 
+            self.miscParams['NumPool'] = 8
 
       def resetParams(self):
             self.__init__(self.exptname)
 
-      def modExpt(self, params : dict, exptname = None):
+      def modExptName(self, exptname):
+            self.exptname = exptname
+
+      def modExpt(self, params : dict, reqUpdate = False):
             #Check if updating ensemble spinup required
-            if exptname is not None:
-                  self.exptname = exptname
             updateRequired = False
             for key, val in params.items():
                   if self.basicParams.get(key) is not None:
@@ -260,7 +256,7 @@ class Expt:
                         #Turn this into a formal warning eventually
                         print('({}, {}) key value pair not in available parameters'.format(key, val))
             #Only update parameters if they effect the model spinup
-            if updateRequired:
+            if updateRequired or reqUpdate:
                   self._updateParams()
       def __str__(self):
             #Basic Model Setup Print
@@ -272,19 +268,14 @@ class Expt:
             Ne: {self.basicParams['Ne']} # Number of Ensemble Members
             T: {self.basicParams['T']} # Number of Time Periods
             dt: {self.basicParams['dt']} # Width of Timesteps
-            expt_flag: {self.basicParams['expt_flag']} # DA method for update step
-                  0: EnKF
-                  1: Bootstrap Particle Filter
-                  2: No update (xa = xf)
-                  ...
 
             ------------------
             Model Information
             ------------------
             model_flag: {self.modelParams['model_flag']} # Model used in forward integration
-                  0: Lorenz 1963
-                  1: Lorenz 1996
-                  2: Lorenz 2005
+                  0: Lorenz 1963 (Nx = 3)
+                  1: Lorenz 1996 (Nx = 40)
+                  2: Lorenz 2005 (Nx  = 480)
             Nx: {self.modelParams['Nx']} # The number of state variables
             
             params: {self.modelParams['params']} # Parameters to tune each forecast model
@@ -301,20 +292,64 @@ class Expt:
                   1: Quadratic (x^2)
                   2: Lognormal (log(abs(x)))
             sig_y: {self.obsParams['sig_y']} # Standard Deviation of observation error
-            tau: {self.obsParams['tau']} # Model steps between observations
+            tau: {self.obsParams['tau']} # Number of model time steps between data assimilation cycles
             obb: {self.obsParams['obb']} # Observation buffer: number of variables to skip when generating obs
             obf: {self.obsParams['obf']} # Observation spatial frequency: spacing between variables
-            Ny: {self.obsParams['Ny']} # Number of observation each cycle
+            Ny: {self.obsParams['Ny']} # Number of observations to assimilate each cycle
 
             ------------------------
-            DA Method Information
+            DA Method Parameter Information
             ------------------------
-            
+            expt_flag: {self.basicParams['expt_flag']} # DA method for update step
+                  0: Ensemble Square Root Filter (EnSRF)
+                  1: Local Particle Filter (LPF)
+                  2: No update (xa = xf)
+                  ...
+            localize: {self.getParam('localize')} # Determines whether to apply localization
+                  0: Off
+                  1: On
+
+            -----Kalman Filter (EnSRF)-----
             roi_kf: {self.getParam('roi_kf')} # Kalman Filter Localization Radius
-            roi_pf: {self.getParam('roi_pf')} # Particle Filter Localization Radius
-
             gamma: {self.getParam('gamma')} # RTPS parameter
 
+            -----Local Particle Filter (LPF)-----
+            roi_pf: {self.getParam('roi_pf')} # Particle Filter Localization Radius
+            mixing_gamma: {self.getParam('mixing_gamma')} # Mixing coefficient for LPF
+            kddm_flag: {self.getParam('kddm_flag')} # Determine whether to apply additional kernal density estimator in LPF step
+                  0: Off
+                  1: On
+            maxiter: {self.getParam('maxiter')} # Maximum number of tempering iterations to run
+            min_res: {self.getParam('min_res')} # Minimum residual
+            Nt_eff: {self.getParam('Nt_eff')} # Effective Ensemble Size
+            ------------------------
+            Miscellaneous Information
+            ------------------------
+            status: {self.getParam('status')} # Notes the status of the given experiment
+                  init: The experiment has been initialized and spun-up, but not run using runDA
+                  init error: An error occured while spinning up the experiment
+                  run error: An error occured while running the experiment 
+                  completed: runDA has been called and the experiment completed without errors
+            output_dir: {self.getParam('output_dir')} # Default output dir for saving experiment-related material
+            saveEns: {self.getParam('saveEns')} # Determines whether full posterior ensemble state is saved at each time step
+                  0: Off
+                  1: On (Default)
+            saveEnsMean: {self.getParam('saveEnsMean')} # Determines whether ensemble mean is saved at each time step
+                  0: Off
+                  1: On (Default)
+            saveForecastEns: {self.getParam('saveForecastEns')} #Determines whether full prior ensemble state is saved at each time step
+                  0: Off (Default)
+                  1: On
+            NumPool: {self.getParam('NumPool')} # Number of CPU cores to use when multiprocessing
+            
+            -----Singular Vector Configuration-----
+            doSV: {self.getParam('doSV')} # Flag to switch on signular value (SV) calculation
+            stepSV: {self.getParam('stepSV')} # Number of time steps between SV calculations
+            forecastSV: {self.getParam('forecastSV')} # SV optimization interval (in increments of time step)
+            outputSV: {self.getParam('outputSV')} # Output Directory for SV output
+            storeCovar: {self.getParam('storeCovar')} # Flag to determine whether to store the Analysis and Forecast States to estimate the covariance matrices
+                  0: Off (Default)
+                  1: On
             '''
             return ret_str
       
@@ -340,7 +375,7 @@ class Expt:
             else:
                   return None
       def __deepcopy__(self, memo):
-            expt = type(self)("", None, _empty = True)
+            expt = type(self)("", None)
             memo[id(self)] = expt
             #Change 'rhs' and 'funcptr' because 
             #they are incompatible with the deepycopy method
@@ -353,7 +388,7 @@ class Expt:
             return expt
 
       def __copy__(self):
-            expt = type(self)("", None, _empty = True)
+            expt = type(self)("", None)
             expt.__dict__.update(self.__dict__)
             return expt
       
@@ -370,7 +405,6 @@ class Expt:
             elif T1 > T2:
                   raise dapExceptions.MismatchTimeSteps(T1, T2)
             elif (obf1 != obf2) or (obb1 != obb2):
-                  #TODO Change Mismatch Obs message to display info about obf and obb not Ny
                   raise dapExceptions.MismatchObs(obf1, obf2)
             elif Ne1 > Ne2:
                   raise dapExceptions.MisMatchEnsSize(Ne1, Ne2)
@@ -432,7 +466,7 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
       if ax is None:
             fig, ax = plt.subplots(1, 1, subplot_kw={'projection': '3d'})
       #TODO Add check to make sure the expt ran before plotting
-      #TODO Add check to make sure plotting time is withtin
+      #TODO Add check to make sure plotting time is withtin range of valid values
       Nx = expt.getParam('Nx')
       Ne = expt.getParam('Ne')
       Nt = expt.getParam('T')
@@ -445,14 +479,19 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
             x = expt.x_ens[:, :, :T+1]
       if model_flag == 0:
             #Model Truth
-            xs_t, ys_t, zs_t = xt[0, :T+1], xt[1, :T+1], xt[2, :T+1]
+            #Plot last 10 steps, if they exist
+            diff = 10
+            startT = T+1 - diff
+            if startT < 0:
+                  startT = 0 
+            xs_t, ys_t, zs_t = xt[0, startT:T+1], xt[1, startT:T+1], xt[2, startT:T+1]
             #Obs
             #xs_y, ys_y, zs_y = copy.deepcopy(xs_t[:, -1]), copy.deepcopy(ys_t[:, -1]), copy.deepycopy(zs_t[:, -1])
 
             if plotEns:
-                  xs, ys, zs = x[0, :, :].T, x[1, :, :].T, x[2, :, :].T
+                  xs, ys, zs = x[0, :, -diff:].T, x[1, :,  -diff:].T, x[2, :,  -diff:].T
             if plotEnsMean:
-                  xs_ens, ys_ens, zs_ens = x_ens[0, :], x_ens[1, :], x_ens[2, :]
+                  xs_ens, ys_ens, zs_ens = x_ens[0,  -diff:], x_ens[1,  -diff:], x_ens[2,  -diff:]
       else:
             ts = np.linspace(0, 2*np.pi, Nx)
             xs, ys = np.cos(ts), np.sin(ts)
@@ -479,15 +518,20 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
             for n in range(Ne):
                   if model_flag == 0:
                         ax.plot3D(xs[:, n], ys[:, n], zs[:, n], c = 'grey', alpha = 0.5)
+                        ax.scatter(xs[-1, n], ys[-1, n], zs[-1, n], c = 'grey', alpha = 0.5)
                   else:
                         ax.plot3D(xs, ys, zs[:, n], c = 'grey', alpha = 0.5)
 
       #Truth
       ax.plot3D(xs_t, ys_t, zs_t, 'blue', label = 'True')
+      if model_flag==0:
+            ax.scatter(xs_t[-1], ys_t[-1], zs_t[-1], c = 'blue')
 
       #Ensemble Mean
       if plotEnsMean:
             ax.plot3D(xs_ens, ys_ens, zs_ens, c = 'red', label = 'Post. Mean')
+            if model_flag == 0:
+                  ax.scatter(xs_ens[-1], ys_ens[-1], zs_ens[-1], c = 'red', label = 'Post. Mean')
 
       if plotObs:
             pass
@@ -499,6 +543,10 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
 def copyExpt(expt:Expt):
       return copy.deepcopy(expt)
 
+
+#TODO Add a helper function that will pring out all configurable settings in the Expt class and list what they do and their potential values
+def listParams():
+      pass
 
 def runDA(expt: Expt, maxT = None, debug = False):
       #np.random.seed(1)
@@ -588,36 +636,30 @@ def runDA(expt: Expt, maxT = None, debug = False):
             match h_flag:
                   case 0:
                         hx = np.matmul(H, xf)
-                        hxm = np.matmul(H, xm)
+                        #hxm = np.mean(hx, axis = -1)
+                        #hxm = np.matmul(H, xm)
                   case 1:
                         hx = np.matmul(H, np.square(xf))
-                        hxm = np.matmul(H, np.square(xm))
+                        #hxm = np.mean(hx, axis = -1)
                   case 2:
                         hx = np.matmul(H, np.log(np.abs(xf)))
-                        hxm = np.matmul(H, np.log(np.abs(xm)))            
+                        #hxm = np.mean(hx, axis = -1)
+                        #hxm = np.matmul(H, np.log(np.abs(xm)))            
 
-
+            hxm = np.mean(hx, axis = -1)[:, None]
             qaqcpass = np.zeros((Ny,))
             #qaqc pass
-            #for i in range(Ny):
-            #      d = np.abs((Y[i, t, :] - hxm[i, :])[0])
-            #      if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
-            #            qaqcpass[i] = 1
+            for i in range(Ny):
+                  d = np.abs((Y[i, t, :] - hxm[i, :])[0])
+                  if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
+                        qaqcpass[i] = 1
             #Data Assimilation
             match expt_flag:
                   case 0: #Deterministic EnKF
                         xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, Y[:, t], C_kf, HC_kf, var_y, gamma, e_flag, qaqcpass)
                         #xa = enkf_update(xf, hx, xm, hxm, Y[:, t], var_y)
                   case 1: #LPF
-
-                        pf_flag = 0
-
-                        match pf_flag:
-                              case 0:
-                                    xa, e_flag = DA.pf_update(xf, hx, Y[:, t, :].T, C_pf, HC_pf, Nt_eff*Ne, min_res, mixing_gamma, var_y, kddm_flag, qaqcpass, maxiter)
-                        #xa = DA.pf_update(xf, hx, Y[:, t], var_y)      
-                              case 1:
-                                    xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C_pf, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
+                              xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C_pf, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
                   case 2: # Stochastic EnKF
                         xa = DA.StochEnKF_update(xf, hx, xm ,hxm, Y[:, t], var_y)
                   case 3: #Nothing
@@ -633,7 +675,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
             if saveEnsMean:
                   x_ensmean[:, t] = np.mean(xa, axis = -1)
                  
-            if doSV and t % stepSV == 0:
+            if doSV == 1 and t % stepSV == 0:
                   #Run SV calculation  
                   #xa_sv = copy.deepcopy(xa)
                   xf_sv= np.stack(pool.map(svpfunc, [xa[:, i] for i in range(Ne)]), axis = -1)
@@ -661,7 +703,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
             #      xf[:, n] = MODELS.model(tmp, dt, tau, funcptr)
       pool.close()
       # Save everything into a nice xarray format potentially
-      if doSV:
+      if doSV == 1:
             #Save everything into a netCDF here
             cdf = xr.Dataset(data_vars = sv_data, coords = sv_coords, attrs=sv_meta)
             if storeCovar != 0:
