@@ -19,7 +19,6 @@ def calc_SV(xa, xf):
       return SVi, SVe, energy, vals
 
 
-
 def create_periodic(sigma, m, dx):
       if m % 2 == 0: #Even
             cx = m/2
@@ -34,10 +33,91 @@ def create_periodic(sigma, m, dx):
       B = np.where(B < 0, 0, B)
       return B
 
-
 def find_beta(sum_exp, Neff):
-    ''' perform bisection method search for the tempering coefficient beta
-    that yields a sufficiently large effective ensemble size'''
+    #sum_exp is of size Ne
+    Ne = sum_exp.shape[0]
+    beta_max = np.max([1, 10*np.max(sum_exp)])
+    w = np.exp(-sum_exp)
+    ws = np.sum(w)
+    if ws > 0:
+        w = w/ws
+        Neff_init = 1/sum(w**2)
+    else:
+        Neff_init = 1
+    
+    if Neff == 1:
+        return
+
+    if Neff_init < Neff or ws == 0:
+        ks, ke = 1, beta_max
+        tol = 1E-5
+        #Start Bisection Method
+
+        for i in range(1000):
+            w = np.exp(-sum_exp/ks)
+            w = w/np.sum(w)
+            fks = Neff - 1/np.sum(w**2)
+            if np.isnan(fks):
+                fks = Neff-1
+            
+            w = np.exp(-sum_exp/ke)
+            w = w/np.sum(w)
+            fke = Neff - 1/np.sum(w**2)
+
+            km = (ke + ks)/2
+            w = np.exp(-sum_exp/km)
+            w = w/np.sum(w)
+            fkm = Neff - 1/np.sum(w**2)
+            if np.isnan(fkm):
+                fkm = Neff-1
+            if (ke-ks)/2 < tol:
+                break
+
+            if fkm*fks > 0:
+                ks = km
+            else:
+                ke = km
+            
+        beta = km
+        w = np.exp(-sum_exp/beta)
+        w = w/np.sum(w)
+        Nf = 1/np.sum(w**2)
+    else:
+        beta = 1
+    return beta
+
+
+def get_reg(Nx, Ne, C, hw, Neff, res, beta_max):
+    beta = np.zeros((Nx, ))
+    res_ind = np.where(res > 0.0)[0]
+    beta[res <= 0.0] = beta_max
+    #hw is Ny x Ne
+    for i in res_ind:
+        wo = 0
+        dum = (Ne*hw - 1)*C[:, i, None]
+        #ind  = np.where(np.abs(dum) > 0.1)
+        #dum[ind] = np.log(dum[ind] + 1 + 1E-10) #Avoid -inf because of np.log([0.0])
+        dum = np.log(dum + 1)
+        wo = wo - np.sum(dum, axis = 0)
+        wo = wo - np.min(wo)
+        beta[i] = find_beta(wo, Neff)
+        if res[i] < 1/beta[i]:
+            beta[i] = 1/res[i]
+            res[i] = 0
+        else:
+            res[i] = res[i] - 1/beta[i]
+
+        beta[i] = np.min([beta[i], beta_max])
+    return beta, res
+
+
+    #Loop through each state variable
+    #If the residual has been reachs, set beta as just beta_max
+
+
+'''def find_beta(sum_exp, Neff):
+    \'\'\' perform bisection method search for the tempering coefficient beta
+    that yields a sufficiently large effective ensemble size\'\'\'
     Ne = len(sum_exp)
     beta_max = max(1, 20 * max(sum_exp))
     
@@ -97,6 +177,7 @@ def find_beta(sum_exp, Neff):
     
     return beta
 
+'''
 
 '''def sampling(x, w, Ne):
     ind = np.zeros((Ne,))
@@ -132,7 +213,8 @@ def find_beta(sum_exp, Neff):
     ind = ind2
     return ind
 '''
-def get_reg(Nx, Ny, Ne, C, hw, Neff, res, beta_max):
+
+'''def get_reg(Nx, Ny, Ne, C, hw, Neff, res, beta_max):
     # find next regularization coefficient for the current
     # tempering step; uses precomputed particle weights
     # and bisection method on beta (see above) to do so,
@@ -172,7 +254,7 @@ def get_reg(Nx, Ny, Ne, C, hw, Neff, res, beta_max):
     # print(beta)
     return beta, res
 
-
+'''
 
 # glue prior and resampled particles together given posterior moments
 # that we're seeking to match and a localization length scale
