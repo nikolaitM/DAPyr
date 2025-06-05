@@ -164,6 +164,7 @@ class Expt:
                   self.x_fore_ens = np.zeros((Nx, Ne, T))
             if self.getParam('saveEnsMean') != 0:
                   self.x_ensmean = np.zeros((Nx, T))*np.nan
+                  self.xf_ensmean = np.zeros((Nx, T))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
             self.rmse_prior = np.zeros((T,))
             self.spread = np.zeros((T,2)) #Spread of Expt Prio/Posterior
@@ -334,7 +335,7 @@ class Expt:
             saveEns: {self.getParam('saveEns')} # Determines whether full posterior ensemble state is saved at each time step
                   0: Off
                   1: On (Default)
-            saveEnsMean: {self.getParam('saveEnsMean')} # Determines whether ensemble mean is saved at each time step
+            saveEnsMean: {self.getParam('saveEnsMean')} # Determines whether post & prior ensemble mean is saved at each time step
                   0: Off
                   1: On (Default)
             saveForecastEns: {self.getParam('saveForecastEns')} #Determines whether full prior ensemble state is saved at each time step
@@ -475,6 +476,7 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
       xf, xt, Y = expt.getStates()
       if plotEnsMean:
             x_ens = expt.x_ensmean[:, :T+1]
+            xf_ens = expt.xf_ensmean[:, :T+1]
       if plotEns:
             x = expt.x_ens[:, :, :T+1]
       if model_flag == 0:
@@ -587,6 +589,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
             x_ens = expt.x_ens
       if saveEnsMean:
             x_ensmean = expt.x_ensmean
+            xf_ensmean = expt.xf_ensmean
       if saveForecastEns:
             x_fore_ens = expt.x_fore_ens
       #Open pool      
@@ -647,12 +650,12 @@ def runDA(expt: Expt, maxT = None, debug = False):
                         #hxm = np.matmul(H, np.log(np.abs(xm)))            
 
             hxm = np.mean(hx, axis = -1)[:, None]
-            qaqcpass = np.zeros((Ny,))
+            qaqcpass = np.zeros((Ny,))           # Knisely, turn off QC pass
             #qaqc pass
-            for i in range(Ny):
-                  d = np.abs((Y[i, t, :] - hxm[i, :])[0])
-                  if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
-                        qaqcpass[i] = 1
+            #for i in range(Ny):
+            #      d = np.abs((Y[i, t, :] - hxm[i, :])[0])
+            #      if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
+            #            qaqcpass[i] = 1
             #Data Assimilation
             match expt_flag:
                   case 0: #Deterministic EnKF
@@ -674,6 +677,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
                   x_ens[:, :, t] = xa
             if saveEnsMean:
                   x_ensmean[:, t] = np.mean(xa, axis = -1)
+                  xf_ensmean[:, t] = np.mean(xf, axis = -1)
                  
             if doSV == 1 and t % stepSV == 0:
                   #Run SV calculation  
