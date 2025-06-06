@@ -66,7 +66,7 @@ class Expt:
             return equality
 
 
-      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, h_flag, H):
+      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, ybias, h_flag, H):
             #Initial Ensemble
             #Spin Up
             xt_0 = 3*np.sin(np.arange(Nx)/(6*2*np.pi))
@@ -98,6 +98,7 @@ class Expt:
                         Y = np.matmul(H, (xt**2 + dum))[:, :, np.newaxis]
                   case 2:
                         Y = np.matmul(H, np.log(np.abs(xt + dum)))[:, :, np.newaxis]
+            Y = Y + ybias           #Knisely 
 
             return xf_0, xt, Y
 
@@ -150,7 +151,7 @@ class Expt:
             h_flag = self.getParam('h_flag')
             H = self.getParam("H")
             #Do model spinup
-            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('NumPool'), self.getParam('sig_y'), h_flag, H)
+            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('NumPool'), self.getParam('sig_y'), self.getParam('ybias'), h_flag, H)
 
             self.states['xf_0'] = xf_0
             self.states['xt'] = xt
@@ -182,6 +183,7 @@ class Expt:
             self.obsParams['tau'] = 3     #Model steps between observations
             self.obsParams['obf'] = 1   #Observation spatial frequency: spacing between variables
             self.obsParams['obb'] = 0   #Observation buffer: number of variables to skip when generating obs
+            self.obsParams['ybias'] = 0   #Observation bias applied to all obs
             self.obsParams['var_y'] = self.obsParams['sig_y']**2
             #Localization
             self.obsParams['localize'] = 1
@@ -206,6 +208,7 @@ class Expt:
                       'l05_K':32, 'l05_I':12, 
                       'l05_b':10.0, 'l05_c':2.5}
             self.modelParams['params'] = params
+            self.modelParams['xbias'] = 0
 
       def _initMisc(self):
             #Parameters for Miscellaneous calculations
@@ -285,6 +288,8 @@ class Expt:
                   Lorenz 1996: [F]
                   Lorenz 2005: [l05_F, l05_Fe, l05_K, l05_I, l05_b, l05_c]
 
+            xbias: {self.modelParams['xbias']} # Linear model bias applied to prior at each time step
+
             ------------------------
             Observation Information
             ------------------------
@@ -297,6 +302,7 @@ class Expt:
             obb: {self.obsParams['obb']} # Observation buffer: number of variables to skip when generating obs
             obf: {self.obsParams['obf']} # Observation spatial frequency: spacing between variables
             Ny: {self.obsParams['Ny']} # Number of observations to assimilate each cycle
+            ybias: {self.obsParams['ybias']} # Linear observation bias applied to all obs at each time step
 
             ------------------------
             DA Method Parameter Information
@@ -577,6 +583,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
 
       #Model Stuff
       params, funcptr = expt.getParam('params'), expt.getParam('funcptr')
+      xbias = expt.getParam('xbias')
       saveEns = expt.getParam('saveEns')
       saveEnsMean = expt.getParam('saveEnsMean')
       saveForecastEns = expt.getParam('saveForecastEns')
@@ -630,6 +637,8 @@ def runDA(expt: Expt, maxT = None, debug = False):
       xf = copy.deepcopy(xf_0)
 
       for t in range(T):
+            xf = xf + xbias         # Knisely
+
             #Observation
             xm = np.mean(xf, axis = -1)[:, np.newaxis]
             rmse_prior[t] = np.sqrt(np.mean((xt[:, t] - xm[:, 0])**2))
