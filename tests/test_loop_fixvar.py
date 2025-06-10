@@ -8,24 +8,28 @@ import copy
 import DAPpyr.MISC
 import DAPpyr.Exceptions
 import matplotlib.pyplot as plt
+import psutil
+import os
+import gc
 
 obs_freq = [1,2,4,8,16]
 mod_bias = [0] #[-0.5, -0.25, 0.0, 0.25, 0.5]
-roi_kf = [0.005]
-gamma = [0]
-ens_n = [40,80,160,240,320]
+roi_kf = [0.1]
+gamma = [0.05]
+ens_n = [350,400,450,500]
 
 for f in obs_freq:
     for x in mod_bias:
         for kf in roi_kf:
             for gam in gamma:
                 for nens in ens_n:
-                    expt_name = f"test_std{f:g}_modbias{x:+.1f}_roikf{kf:f}_gam{gam:f}"
+                    #expt_name = f"test_std{f:g}_modbias{x:+.1f}_roikf{kf:g}_gam{gam:g}"
+                    expt_name = f"test_std{f:g}_nens{nens:g}"
                     print(expt_name)
                     expt  = dap.Expt(expt_name, {'expt_flag': 0, # EnSRF
                                                 "Ne": nens, 
                                                 'model_flag': 2, # Lorenz 05 Model III
-                                                'sig_y': 0.32,
+                                                'sig_y': 0.5,
                                                 'obf': f,
                                                 'T': 300,
                                                 'localize': 0,  # Turns localization on/off
@@ -33,13 +37,20 @@ for f in obs_freq:
                                                 'gamma': gam,  # RTPS parameter
                                                 'xbias': mod_bias,
                                                 'ybias': 0,
-                                                'NumPool': 40,
+                                                'NumPool': 30,
                                                 'output_dir': '/Users/knisely/pyDA_data/'
                                                 })
 
-                    print(expt)
+                    process = psutil.Process(os.getpid())
+                    memory_before = process.memory_info().rss / 1024 / 1024  # MB
+                    print(f"Memory before {expt_name}: {memory_before:.1f} MB")
+                    
+                    #print(expt)
                     dap.runDA(expt)
                     expt.saveExpt()
+
+                    memory_after = process.memory_info().rss / 1024 / 1024  # MB
+                    print(f"Memory after {expt_name}: {memory_after:.1f} MB")
 
                     plt.plot(expt.rmse)
                     plt.title('Posterior RMSE for Experiment\n{}'.format(expt.exptname))
@@ -50,4 +61,7 @@ for f in obs_freq:
                     plt.savefig(figname)
                     #plt.show()
                     plt.close()
+
+                    del expt
+                    gc.collect()
 print('done all')

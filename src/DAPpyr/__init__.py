@@ -173,13 +173,13 @@ class Expt:
       #Modify the Experiment Parameters
       def _initBasic(self):
             self.basicParams['T'] = 100
-            self.basicParams['dt'] = 0.01
+            self.basicParams['dt'] = 0.05
             self.basicParams['Ne'] = 80
             self.basicParams['expt_flag'] = 0
             self.basicParams['error_flag'] = 0
       def _initObs(self):
             self.obsParams['h_flag'] = 0 #Linear Operator
-            self.obsParams['sig_y'] = 1   #Observation error standard deviation
+            self.obsParams['sig_y'] = 0.5   #Observation error standard deviation
             self.obsParams['tau'] = 1     #Model steps between observations
             self.obsParams['obf'] = 1   #Observation spatial frequency: spacing between variables
             self.obsParams['obb'] = 0   #Observation buffer: number of variables to skip when generating obs
