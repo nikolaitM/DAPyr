@@ -12,32 +12,32 @@ import psutil
 import os
 import gc
 
-obs_freq = [1,2,4,8,16]
-mod_bias = [0] #[-0.5, -0.25, 0.0, 0.25, 0.5]
-roi_kf = [0.1]
-gamma = [0.05]
-ens_n = [350,400,450,500]
+obs_freq = [1]
+mod_bias = [-0.5,-0.25,0,0.25,0.5]
+roi_kf = [0.1,0.3,0.5,0.7,0.9] #Check localization flag
+gamma = [0.1,0.3,0.5,0.7,0.9]
+ens_n = [350]
 
 for f in obs_freq:
     for x in mod_bias:
         for kf in roi_kf:
             for gam in gamma:
                 for nens in ens_n:
-                    #expt_name = f"test_std{f:g}_modbias{x:+.1f}_roikf{kf:g}_gam{gam:g}"
-                    expt_name = f"test_std{f:g}_nens{nens:g}"
+                    expt_name = f"test_std{f:g}_modbias{x:+.2f}_roikf{kf:g}_gam{gam:g}"
+                    #expt_name = f"test_std{f:g}_nens{nens:g}"
                     print(expt_name)
                     expt  = dap.Expt(expt_name, {'expt_flag': 0, # EnSRF
                                                 "Ne": nens, 
                                                 'model_flag': 2, # Lorenz 05 Model III
                                                 'sig_y': 0.5,
                                                 'obf': f,
-                                                'T': 300,
-                                                'localize': 0,  # Turns localization on/off
+                                                'T': 200,
+                                                'localize': 1,  # Turns localization on/off
                                                 'roi_kf': kf,  # Localization radius
                                                 'gamma': gam,  # RTPS parameter
-                                                'xbias': mod_bias,
+                                                'xbias': x,
                                                 'ybias': 0,
-                                                'NumPool': 30,
+                                                'NumPool': 40,
                                                 'output_dir': '/Users/knisely/pyDA_data/'
                                                 })
 

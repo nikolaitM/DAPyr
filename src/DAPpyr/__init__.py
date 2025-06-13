@@ -24,6 +24,7 @@ class Expt:
             self.obsParams = {}
             self.basicParams = {}
             self.miscParams = {}
+            #self.biasParams = {}
             self.states = {} #Dictionary to store all the model states
 
                     
@@ -32,6 +33,7 @@ class Expt:
             self._initModel()
             self._initObs()
             self._initMisc()
+            #self._initBC()
 
 
             #If additional changes to the parameters are specified, change them
@@ -166,6 +168,9 @@ class Expt:
             if self.getParam('saveEnsMean') != 0:
                   self.x_ensmean = np.zeros((Nx, T))*np.nan
                   self.xf_ensmean = np.zeros((Nx, T))*np.nan
+            if self.getParam('offlineBC') != 0 or self.getParam('onlineBC') != 0:
+                  self.AmB = np.zeros((Y.shape[0],))*np.nan
+                  self.OmB_interp = np.zeros((Y.shape[0],))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
             self.rmse_prior = np.zeros((T,))
             self.spread = np.zeros((T,2)) #Spread of Expt Prio/Posterior
@@ -227,6 +232,11 @@ class Expt:
             self.miscParams['outputSV'] = self.getParam('output_dir') #output directory for SV calculation files
             self.miscParams['storeCovar']= 0 #Store the covariances 
             self.miscParams['NumPool'] = 8
+
+            #Parameters for model-aware obs bias correction
+            self.miscParams['offlineBC'] = 0 #0 for false, 1 for true
+            self.miscParams['BCpath'] = '' #Path to .expt file with analysis increments/innovation statistics
+            self.miscParams['onlineBC'] = 0 #Doesn't do anything at the moment
 
       def resetParams(self):
             self.__init__(self.exptname)
@@ -329,6 +339,15 @@ class Expt:
             maxiter: {self.getParam('maxiter')} # Maximum number of tempering iterations to run
             min_res: {self.getParam('min_res')} # Minimum residual
             Nt_eff: {self.getParam('Nt_eff')} # Effective Ensemble Size
+            
+            ------------------------
+            Bias Correction (WIP Knisely)
+            ------------------------
+            offlineBC: {self.getParam('offlineBC')} # Determines whether offline model-aware bias correction is performed
+                  0: Off (Default)
+                  1: On
+            BCpath: {self.getParam('BCpath')} # Path to .expt file with analysis increments/innovation statistics              
+            
             ------------------------
             Miscellaneous Information
             ------------------------
@@ -348,7 +367,7 @@ class Expt:
                   0: Off (Default)
                   1: On
             NumPool: {self.getParam('NumPool')} # Number of CPU cores to use when multiprocessing
-            
+
             -----Singular Vector Configuration-----
             doSV: {self.getParam('doSV')} # Flag to switch on signular value (SV) calculation
             stepSV: {self.getParam('stepSV')} # Number of time steps between SV calculations
@@ -587,6 +606,8 @@ def runDA(expt: Expt, maxT = None, debug = False):
       saveEns = expt.getParam('saveEns')
       saveEnsMean = expt.getParam('saveEnsMean')
       saveForecastEns = expt.getParam('saveForecastEns')
+      offlineBC = expt.getParam('offlineBC')
+      onlineBC = expt.getParam('onlineBC')
 
       e_flag = expt.getParam('error_flag')
       rmse = expt.rmse
@@ -599,6 +620,10 @@ def runDA(expt: Expt, maxT = None, debug = False):
             xf_ensmean = expt.xf_ensmean
       if saveForecastEns:
             x_fore_ens = expt.x_fore_ens
+      if offlineBC or onlineBC:
+            AmB = expt.AmB
+            OmB_interp = expt.OmB_interp
+
       #Open pool      
       pool = mp.get_context('fork').Pool(numPool)
       pfunc = partial(MODELS.model, dt = dt, T = tau, funcptr = funcptr)
@@ -632,10 +657,42 @@ def runDA(expt: Expt, maxT = None, debug = False):
                                             'Xf': (['t', 'Nx','mem'], np.zeros((sv_t, Nx, Ne))*np.nan)}
             svpfunc = partial(MODELS.model, dt = dt, T = forecastSV, funcptr = funcptr)
 
-      # Time Loop
+      # Load IC, truth, & obs
       xf_0, xt, Y = expt.getStates()
       xf = copy.deepcopy(xf_0)
 
+      #Linear bias correction stuff # Knisely
+      offlineBC = expt.getParam('offlineBC')
+      onlineBC = expt.getParam('onlineBC')
+      if offlineBC:
+            #Retrieve variables from previous run
+            BCpath = expt.getParam('BCpath')
+            BCexpt = loadExpt(BCpath)
+            BC_x = BCexpt.x_ensmean
+            BC_xf = BCexpt.xf_ensmean
+            BC_obs = np.squeeze(BCexpt.states['Y'])
+            BC_H = BCexpt.obsParams['H']
+            
+            #Get time-average OmB and AmB
+            BC_spinup = 100 #Hardcoded for now
+            BC_x_mean = np.mean(BC_x[:,BC_spinup:],axis=1)
+            BC_xf_mean = np.mean(BC_xf[:,BC_spinup:],axis=1)
+            BC_obs_mean = np.mean(BC_obs[:,BC_spinup:],axis=1)
+            AmB = np.matmul(H,(BC_x_mean - BC_xf_mean))
+            OmB = BC_obs_mean - np.matmul(BC_H,BC_xf_mean)
+
+            #Copy y and then apply model-aware linear bias correction
+            Y_orig = copy.deepcopy(Y)
+            #OmB needs to be same length as Y
+            if OmB.shape[0] != Y.shape[0]:
+                  orig_coords = np.arange(OmB.shape[0])
+                  targ_coords = np.arange(Y.shape[0])
+                  OmB_interp = np.interp(targ_coords, orig_coords, OmB)
+            else:
+                  OmB_interp = OmB
+            Y = Y - OmB_interp[:, np.newaxis, np.newaxis] + AmB[:, np.newaxis, np.newaxis]
+
+      # Time Loop
       for t in range(T):
             xf = xf + xbias         # Knisely
 
