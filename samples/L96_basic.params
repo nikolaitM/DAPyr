@@ -1,0 +1,93 @@
+#An example experiment file for configuring experiments for a basic Lorenz 96
+#experiment. 
+
+#Words after '#' will be ignored
+
+#Name of the experiment 
+expt_name="L96_basic"
+
+###################
+#Basic Parameters: Used to configure the basic setup for an experiment
+##################
+
+T = 100 #Number of timesteps
+dt = 0.05 #Increment of each time step
+Ne = 10 #Number of ensemble members
+NumPool = 8 #Number of CPUS used for multiprocessing
+seed = -1 #Seed for randome number generator (-1: None, >=0: Seed Set)
+
+#######################
+#Observation Parameters: Used to configure how observations assimilated
+#######################
+
+h_flag = 0 #Observation Operator (0: Linear, 1: Quadratic, 2: Log-Normal)
+sig_y = 1 #Standard Deviation of observation error
+tau = 1 #Number of timesteps between data assimilation
+obf = 1 #Observation spatial frequency spacing between assimilated variables
+obb = 0 #Observation buffer: Number of variables to skip before starting to assimilate obs.
+
+###############
+#Model Parameters: Used for determining what model is run
+##############
+model_flag = 1 #Model used (0: Lorenz 1963, 1: Lorenz 1996, 2: Lorenz 2005)
+
+#Lorenz 1963 Parameters
+s = 10
+r = 28
+b = 2.67
+
+#Lorenz 1996 Parameters
+F = 8
+
+#Lorenz 2005 Parameters
+l05_F = 15
+l05_Fe = 15
+l05_K = 32
+l05_I = 12
+l05_b = 10.0
+l05_c = 2.5
+
+#############################
+#Data Assimilation Parameters: Used to turn the parameters in each DA method
+#############################
+
+expt_flag = 0 #DA scheme used (0: EnSRF, 1: LPF, 2: Nothing)
+
+############
+#Localization Parameters
+############
+localize=1 #Whether to include localization in DA (0: False, 1: True)
+roi=0.001 #Radius of localization
+
+#####
+#EnKF
+#####
+#Inflation
+gamma=0.03 #Inflation parameter for RTPS, set to 0 to turn off
+
+#####
+#LPF
+#####
+mixing_gamma=0.3 #Mixing coefficient for LPF
+kddm_flag=0 #Whether to turn on kernel density estimation step (0: off, 1: on)
+min_res=0.0 #Minimum residual
+maxiter = 1 #Maximum number of incremental LPF update steps allowed
+Nt_eff = 0.4 #Effective Ensemble Size
+
+############
+#Singular Vector Parameters : Used for configuring singular vector calculation
+############
+doSV = 0 #Determines if SVs are calculated (0: False, 1: True)
+stepSV = 1 #How many timesteps to skip between SV calculations
+storeCovar = 0 #Store the covariance matrices used for SV estimation (Files will be large)
+forecastSV = 4 #Optimization time interval (in increments of dt) for SV calculation
+outputSV = './output/' #output directory for SV calculation files (Default: output_dir value)
+
+############
+#Output Parameters: Used for determining what is outputted and saved for each experiment
+############
+
+output_dir= './output/' #Default directory where experiment will be saved to
+saveEns=0 #Whether to save ensemble members at each timestep (0: False, 1: True)
+saveEnsMean=1 #Whether to save ensemble mean at each timestep (0: False, 1: True)
+saveForecastEns=0 #Whether to save forecast ensemble each timestep (0: False, 1: True)
