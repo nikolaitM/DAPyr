@@ -1,15 +1,10 @@
 [build-system]
-requires = ["hatchling >= 1.26","numpy >= 1.26.4",
-  "xarray >= 2022.11.0",
-  "numba >= 0.60.0",
-  "numbalsoda >= 0.3.4",
-  "matplotlib >=3.10.0",
-  "scipy >= 1.15.2"]
+requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [project]
 name = "DAPyr"
-version = "0.0.1"
+version = "0.0.3"
 authors = [
   { name="Maria Nikolaitchik", email="mnikolai@umd.edu" },
 ]
@@ -24,12 +19,12 @@ classifiers = [
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
 dependencies = [
-  "numpy >= 1.26.4",
-  "xarray >= 2022.11.0",
-  "numba >= 0.60.0",
-  "numbalsoda >= 0.3.4",
-  "matplotlib >=3.10.0",
-  "scipy >= 1.15.2"
+  "numpy>=1.26.4",
+  "xarray>=2022.11.0",
+  "numba>=0.60.0",
+  "numbalsoda>=0.3.4",
+  "matplotlib>=3.10.0",
+  "scipy>=1.15.2"
 ]
 [project.urls]
 Homepage = "https://github.com/nikolaitM/DApyr"
