@@ -10,58 +10,30 @@ from . import MODELS
 from . import MISC
 from . import DA
 import xarray as xr
-import DAPyr.Exceptions as dapExceptions
+from . import Exceptions as dapExceptions
 import pickle
 import matplotlib.pyplot as plt
 import warnings
 
 class Expt:
-      '''Initialize a Data Assimilation experiment using toy models and configurable parameters.
+      '''Initialize a Data Assimilation experiment and configurable parameters.
 
       Attributes
       -----------
       modelParams: dict
-            a dictionary containing all parameters initializing the chosen toy model.
+            A dictionary containing all parameters initializing the chosen toy model.
       obsParams: dict
-            a dictionary containing all parameters initializing observations.
+            A dictionary containing all parameters initializing observations.
       basicParams: dict
-            a dictionary containing all parameters initializing basic experimental set-up.
+            A dictionary containing all parameters initializing basic experimental set-up.
       miscParams: dict
-            a dictionary containing all parameters initializing output and other miscellaneous parameters.
+            A dictionary containing all parameters initializing output and other miscellaneous parameters.
       states: dict
-            a dictionary containing all state vectors (model truth, observations, and initial ensemble states).
+            A dictionary containing all state vectors (model truth, observations, and initial ensemble states).
 
-      Methods
-      ---------
-      getParam
-            Retrieve the value of a parameter stored in the Expt class.
-      modExpt
-            Modify a parameter in the Expt class, recalculating new initial states if necessary.
-      getParamNames
-            Retrieve all modifiable parameters in the Expt class.
-      resetParams
-            Reset all Expt parameters to their default values.
-      modExptName
-            Modify the name of the experiment only.
-      getBasicParams
-            Retrieve the basic parameters describing the experiment (Ne, Nx, T, and dt).
-      getStates
-            Retrieve the state vectors for the experiment: the inital ensemble state (xf_0), model truth (xt), and observations (Y).
-      copyStates
-            Copy the states from another inputed experiment.
-      saveExpt
-            Save the experiment to a file.
       '''
+
       def __init__(self, name : str, params : dict = None):
-            '''
-            Parameters
-            -----------
-            name : str
-                  The name of the experiment
-            params : dict
-                  A dictionary of parameters to configure the experiment with. If None, default parameters are used
-            
-            '''
             #Expt Name
             self.exptname = name 
 
@@ -169,13 +141,13 @@ class Expt:
             model_flag = self.getParam('model_flag')
             match model_flag:
                   case 0: #Lorenz 63
-                        self.modelParams['rhs'] = MODELS.make_rhs_l63(self.modelParams['params'])
+                        self.modelParams['rhs'] = MODELS.make_rhs_l63(self.modelParams['model_params'])
                         self.modelParams['Nx']  = 3
                   case 1: #Lorenz 96
-                        self.modelParams['rhs'] = MODELS.make_rhs_l96(self.modelParams['params'])
+                        self.modelParams['rhs'] = MODELS.make_rhs_l96(self.modelParams['model_params'])
                         self.modelParams['Nx'] = 40
                   case 2: #Lorenz 05
-                        self.modelParams['rhs'] = MODELS.make_rhs_l05(self.modelParams['params'])
+                        self.modelParams['rhs'] = MODELS.make_rhs_l05(self.modelParams['model_params'])
                         self.modelParams['Nx'] = 480
             self.modelParams['funcptr'] = self.modelParams['rhs'].address
       
@@ -288,7 +260,7 @@ class Expt:
                       'l05_F':15, 'l05_Fe':15,
                       'l05_K':32, 'l05_I':12, 
                       'l05_b':10.0, 'l05_c':2.5}
-            self.modelParams['params'] = params
+            self.modelParams['model_params'] = params
       def _initMisc(self):
             #Output Parameters
             self.miscParams['status'] = 'init'
@@ -311,17 +283,22 @@ class Expt:
             self.__init__(self.exptname)
 
       def modExptName(self, exptname : str) -> None:
-            '''
+            '''Modify the name of the Experiment
 
             Parameters
             -----------
             exptname : str
                   New experiment name
+
             '''
             self.exptname = exptname
 
       def modExpt(self, params : dict, reqUpdate: bool = False):
             '''Modify a parameter in the Expt class, recalculating new initial states if necessary.
+
+            Note
+            ------
+            Modifying most parameters will cause a recalculation of all state vectors. To maintain consistent ensemble states across modification, consider setting the `seed` parameter in your experiment.
 
             Parameters
             -----------
@@ -329,6 +306,7 @@ class Expt:
                   A dictionary containing the parameter to modify and its new modified value
             reqUpdate : bool
                   A boolean determining whether recalculation of new states should be forced
+
             '''
             #CHECK Think about whether reseting experiment status should be done in _updateParams or here
             # Because modding the miscParams outDir technically doesn't change anything, but the status will get reset
@@ -345,11 +323,11 @@ class Expt:
                               updateRequired = True
                   elif self.modelParams.get(key) is not None:
                         updateRequired = True
-                        if key =='params':
+                        if key =='model_params':
                               model_params = self.modelParams[key]
                               for pkey, pval in val.items():
                                     model_params[pkey] = pval
-                              self.modelParams['params'] = model_params
+                              self.modelParams['model_params'] = model_params
                         else:
                               self.modelParams[key] = val
                   elif self.obsParams.get(key) is not None:
@@ -383,7 +361,7 @@ class Expt:
                   2: Lorenz 2005 (Nx  = 480)
             Nx: {self.modelParams['Nx']} # The number of state variables
             
-            params: {self.modelParams['params']} # Parameters to tune each forecast model
+            params: {self.modelParams['model_params']} # Parameters to tune each forecast model
             Above is a list of all the parameters stored for use in the forecast model
                   Lorenz 1963: [s, r, b]
                   Lorenz 1996: [F]
@@ -489,7 +467,11 @@ class Expt:
       
       def getParam(self, param : str):
             '''Retrieve the value of a parameter stored in the Expt class.
-            
+
+            Note
+            ------
+            `getParam` returns **immutable** instances of the state vectors `xt`, `Y`, and `xf_0`, meaning that modifying instances returned by `getParam` will not modifying the instances stored in the `Expt` object itself. To modify the states of an experiment after spinup, access them directly through the `expt.states` dictionary.
+
             Parameters
             -----------
             param : str
@@ -499,6 +481,7 @@ class Expt:
             -------
             param_value
                   Value of the requested parameter
+            
             '''
             if self.basicParams.get(param) is not None:
                   val =  self.basicParams.get(param)
@@ -506,8 +489,8 @@ class Expt:
                   val =  self.modelParams.get(param)
             elif self.obsParams.get(param) is not None:
                   val =  self.obsParams.get(param)
-            elif self.modelParams['params'].get(param) is not None:
-                  val =  self.modelParams['params'].get(param)
+            elif self.modelParams['model_params'].get(param) is not None:
+                  val =  self.modelParams['model_params'].get(param)
             elif self.states.get(param) is not None:
                   val = self.states.get(param)
             elif self.miscParams.get(param) is not None:
@@ -540,6 +523,28 @@ class Expt:
       
 
       def copyStates(self, expt):
+            """Copy the states (model truth, initial ensemble, and observations) from another experiment
+
+            Parameters
+            ----------
+            expt : Expt 
+                The experiment to copy the states from.
+
+            Raises
+            ------
+            TypeError
+                Experiment instance not provided.
+            dapExceptions.MismatchModelSize
+                Model flags do not match between experiments.
+            dapExceptions.MismatchTimeSteps
+                Attempting to copy from experiment with less time steps than current experiment.
+            dapExceptions.MismatchObs
+                Number of assimilated observations do not match between experiments.
+            dapExceptions.MismatchEnsSize
+                Attempting to copy from experiment with less ensemble members than current experiment.
+            dapExceptions.MismatchOperator
+                Measurement operator flags do not match between experiments.
+            """
 
             if not isinstance(expt, Expt):
                   raise TypeError("expt not an instance of the Expt class")
@@ -577,6 +582,18 @@ class Expt:
             saveExpt(outputdir, self)
 
 def loadParamFile(filename : str):
+      """Create an experiment from params textfile.
+
+      Parameters
+      ----------
+      filename : str
+          Path to a textfile containing all configurable parameters, see sample files.
+
+      Returns
+      -------
+      Expt
+          An instance of the Expt class.
+      """
       f = open(filename)
       lines = f.readlines()
       filtered = [x[:x.find('#')] for x in lines]
@@ -599,25 +616,60 @@ def loadParamFile(filename : str):
                   if val is str:
                         val = val.replace('\'', '').replace('\"', '')
                   expt_params[split[0]] = val
-            expt_params['params'] = params
+            expt_params['model_params'] = params
       f.close()
       e = Expt(expt_name, expt_params)
       return e
 
-def saveExpt(outputdir, expt: Expt):
+def saveExpt(outputdir : str, expt: Expt):
+      """Save an experiment to the file system. Will save the file under 'exptname.expt'.
+
+      Parameters
+      ----------
+      outputdir : str
+          Path to directory where the experiment will be saved.
+      expt : Expt
+          The experiment instance to save.
+      """
       expt.modelParams['rhs'] = ''
       expt.modelParams['funcptr'] = ''
       with open('{}/{}.expt'.format(outputdir, expt.exptname), 'wb') as f:
             pickle.dump(expt, f)
       expt._configModel()
 
-def loadExpt(file):
+def loadExpt(file : str):
+      """Load an experiment from the filesystem.
+
+      Parameters
+      ----------
+      file : str
+          A string containing the filepath to the experiment.
+
+      Returns
+      -------
+      Expt
+          An instance of the Expt class.
+      """
       with open(file, 'rb') as f:
             expt = pickle.load(f)
       expt._configModel()
       return expt
 
 def plotLocalization(expt: Expt, ax = None):
+      """Plot the localization radius of an experiment.
+
+      Parameters
+      ----------
+      expt : Expt
+          An Expt instance to plot localization for.
+      ax : _type_, optional
+          A matplotlib.pyplot `Axes` instance on which to plot localization onto, by default None. Must have a '3d' projection specified.
+
+      Returns
+      -------
+      matplotlib.pyplot.Axes
+          A `matplotlib.pyplot.Axes` instance.
+      """
       Nx = expt.getParam('Nx')
       obb = expt.getParam('obb')
       C = expt.getParam('C')
@@ -653,7 +705,37 @@ def plotLocalization(expt: Expt, ax = None):
             return fig, ax
 
 def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plotEnsMean = False):
-      '''Plots the model truth, obs, ensembles, and ensemble mean at time T'''
+      """Plots the model truth, obs, ensembles, and ensemble mean at time T.
+
+      Parameters
+      ----------
+      expt : Expt
+          An Expt instance to plot
+      T : int
+          _description_
+      ax : _type_, optional
+          _description_, by default None
+      plotObs : bool, optional
+          _description_, by default False
+      plotEns : bool, optional
+          _description_, by default True
+      plotEnsMean : bool, optional
+          _description_, by default False
+
+      Returns
+      -------
+      _type_
+          _description_
+
+      Raises
+      ------
+      TypeError
+          _description_
+      ValueError
+          _description_
+      ValueError
+          _description_
+      """
       if ax is None:
             fig, ax = plt.subplots(1, 1, subplot_kw={'projection': '3d'})
 
@@ -782,7 +864,24 @@ def copyExpt(expt: Expt):
       return copy.deepcopy(expt)
 
 
-def runDA(expt: Expt, maxT = None, debug = False):
+def runDA(expt: Expt, maxT : int = None):
+      '''Run an experiment using its stored configurations
+      
+      Parameters
+      ----------
+      expt: Expt
+            An instance of the Expt class you would like to run
+
+      maxT : int, optional
+            The maximum number of time steps to run the experiment out to.
+            Must be less that the maximum time step "T" stored in the experiment. 
+            If None, the experiment will run to the timestep specified by the "T" parameter.
+      
+      Returns
+      ---------
+      status : str
+            A string specifying the status of the run.
+      '''
       # Basic Parameters
       Ne, Nx, T, dt = expt.getBasicParams()
 
@@ -810,7 +909,7 @@ def runDA(expt: Expt, maxT = None, debug = False):
       h_flag, expt_flag = expt.getParam('h_flag'), expt.getParam('expt_flag')
 
       #Model Parameters
-      params, funcptr = expt.getParam('params'), expt.getParam('funcptr')
+      params, funcptr = expt.getParam('model_params'), expt.getParam('funcptr')
       saveEns = expt.getParam('saveEns')
       saveEnsMean = expt.getParam('saveEnsMean')
       saveForecastEns = expt.getParam('saveForecastEns')

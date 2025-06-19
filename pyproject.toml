@@ -4,13 +4,14 @@ build-backend = "hatchling.build"
 
 [project]
 name = "DAPyr"
-version = "0.0.6"
+version = "0.0.8"
 authors = [
   { name="Maria Nikolaitchik", email="mnikolai@umd.edu" },
 ]
 description = "A Python package for running toy model data assimilation experiments"
 readme = "README.md"
 keywords = ["data assimilation", "Lorenz", "DA"]
+requires-python = ">=3.10"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
@@ -23,7 +24,7 @@ dependencies = [
   "scipy >=1.15.2",
   "xarray >= 2024.11.0",
   "numba >=0.60.0",
-  "numbalsoda >=0.3.4"
+  "numbalsoda >= 0.3.4"
 ]
 [project.urls]
 Homepage = "https://github.com/nikolaitM/DApyr"
@@ -31,3 +32,9 @@ Issues = "https://github.com/nikolaitM/DApyr/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/DAPyr"]
+
+[tool.hatch.build.targest.sdist]
+include = [
+"/tests",
+"/samples",
+]
