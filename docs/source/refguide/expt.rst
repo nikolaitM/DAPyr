@@ -38,10 +38,10 @@ Parameters in the *basicParams* attribute store information that define the basi
      - Seed for random number generator. Set to -1 to turn off.
 
 obsParams
+^^^^^^^^^^^
 
 The *obsParams* attribute stores all parameters relating to the observations to assimilation, from what measurement operator to use to prescribing observation error. Additionally, the *obsParam* attribute stores parameters relating to coniguring the data assimilation methods.
 
-^^^^^^^^^
 .. list-table::
    :header-rows: 1
 
