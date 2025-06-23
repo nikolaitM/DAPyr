@@ -1,0 +1,60 @@
+``Expt`` Class
+========================
+
+.. autoclass:: DAPyr::Expt
+      :class-doc-from: class
+      :members:
+
+Configurable Paramters
+-----------------------
+
+basicParams
+^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+
+   * - Paramter
+     - Default
+     - Description
+   * - `T`
+     - 100
+     - Total number of time steps in experiment
+   * - `dt`
+     - Model Specific
+     - Model time step increment
+   * - `Ne`
+     - 10
+     - Number of ensemble members
+   * - `expt_flag`
+     - 0
+     - Flag to select which Data Assimilation method to use
+            0: EnSRF
+            1: Local Particle Filter
+            2: No Data Assimilation
+   * - `seed`
+     - -1
+     - Seed for random number generator. Set to -1 to turn off.
+
+obsParams
+^^^^^^^^^
+
+modelParams
+^^^^^^^^^^^^^
+
+miscParams
+^^^^^^^^^^^
+
+
+
+
+
+
+
+
+
+
+Examples
+----------
+
+

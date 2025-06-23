@@ -1,3 +1,5 @@
+'''Initialize, configure, and run data assimilation experiments with toy models.'''
+
 __all__ = ['MISC', 'MODELS', 'DA']
 
 
@@ -97,7 +99,7 @@ class Expt:
             return equality
 
 
-      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, h_flag, H):
+      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, numPool, sig_y, h_flag, H):
             #Initial Ensemble
             #Spin Up
             seed = self.getParam('seed')
@@ -112,7 +114,7 @@ class Expt:
             xf_0 = xt_0[:, np.newaxis] + 1*rng.randn(Nx, Ne)
             pfunc = partial(MODELS.model, dt = dt, T = 100, funcptr=funcptr)
             
-            with mp.get_context('fork').Pool(NumPool) as pool:
+            with mp.get_context('fork').Pool(numPool) as pool:
                   xf_0 = np.stack(pool.map(pfunc, [xf_0[:, i] for i in range(Ne)]), axis = -1)
             
             #for n in range(Ne):
@@ -265,6 +267,7 @@ class Expt:
             #Output Parameters
             self.miscParams['status'] = 'init'
             self.miscParams['output_dir'] = './'
+            #TODO Switch saveEns to off on release
             self.miscParams['saveEns'] = 1
             self.miscParams['saveEnsMean'] = 1
             self.miscParams['saveForecastEns'] = 0
@@ -276,7 +279,7 @@ class Expt:
             self.miscParams['outputSV'] = self.getParam('output_dir') #output directory for SV calculation files
             self.miscParams['storeCovar']= 0 #Store the covariances 
 
-            self.miscParams['NumPool'] = 8
+            self.miscParams['numPool'] = 8
 
       def resetParams(self):
             '''Reset all Expt parameters to their default values.'''
@@ -421,7 +424,7 @@ class Expt:
             saveForecastEns: {self.getParam('saveForecastEns')} #Determines whether full prior ensemble state is saved at each time step
                   0: Off (Default)
                   1: On
-            NumPool: {self.getParam('NumPool')} # Number of CPU cores to use when multiprocessing
+            numPool: {self.getParam('numPool')} # Number of CPU cores to use when multiprocessing
             
             -----Singular Vector Configuration-----
             doSV: {self.getParam('doSV')} # Flag to switch on signular value (SV) calculation
@@ -576,6 +579,13 @@ class Expt:
                   self.states['Y'] = copy.deepcopy(Y)[:, :T1, :]
                   
       def saveExpt(self, outputdir : str = None):
+            """Save the experiment to the filesystem. Experiments are saved with the filename [exptname].expt
+
+            Parameters
+            ----------
+            outputdir : str, optional
+                Path to directory where to save the experiment , by default the value stored in the `output_dir` parameter.
+            """
             #TODO Make sure that exptname is a valid filename, if not, convert it to one or throw an error
             if outputdir is None:
                   outputdir = self.getParam('output_dir')
@@ -712,29 +722,28 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
       expt : Expt
           An Expt instance to plot
       T : int
-          _description_
-      ax : _type_, optional
-          _description_, by default None
+          The time step during the experiment to plot.
+      ax : matplotlib.pyplot.Axes, optional
+          An instance of a matplotlib Axes to plot onto, by default None. Must have specified a '3d' projection
       plotObs : bool, optional
-          _description_, by default False
+          A boolean to configure whether to plot observations, by default False
       plotEns : bool, optional
-          _description_, by default True
+          A boolean to configure whether to plot ensemble members, by default True. Must have had saveEns configured to 1.
       plotEnsMean : bool, optional
-          _description_, by default False
+          A boolean to configure whether to plot ensemble mean, by default False. Must have had saveEnsMean configured to 1.
 
       Returns
       -------
-      _type_
-          _description_
+      matplotlib.pyplot.Axes
+          A matplotlib.pyplot Axes instance
 
       Raises
       ------
       TypeError
-          _description_
+          Raised if Expt instance is not passed.
       ValueError
-          _description_
-      ValueError
-          _description_
+          Raised if the Expt instance passed has not be run through `runDA()`, or an invalid time step, T, provided.
+
       """
       if ax is None:
             fig, ax = plt.subplots(1, 1, subplot_kw={'projection': '3d'})
@@ -860,7 +869,18 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
             return ax
       
 def copyExpt(expt: Expt):
-      '''Copy the experiment'''
+      """Create a deepcopy of an existing experiment
+
+      Parameters
+      ----------
+      expt : Expt
+          An instance of the Expt class.
+
+      Returns
+      -------
+      Expt
+          A copy of the experiment.
+      """
       return copy.deepcopy(expt)
 
 
@@ -890,7 +910,7 @@ def runDA(expt: Expt, maxT : int = None):
                   raise ValueError('maxT greater than T in experiment ({} > {})'.format(maxT, T))
             T = maxT
 
-      numPool = expt.getParam('NumPool')
+      numPool = expt.getParam('numPool')
       #Observation Parameters
       var_y = expt.getParam('sig_y')**2
       H = expt.getParam('H')

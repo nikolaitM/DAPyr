@@ -1,0 +1,304 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Helper Functions &mdash; DAPyr 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API" href="../api.html" />
+    <link rel="prev" title="Running a Data Assimilation Experiment" href="runda.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DAPyr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../userguide/overview.html">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../userguide/overview.html#basic-usage">Basic usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../userguide/installation.html">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../userguide/installation.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../userguide/installation.html#failure-to-build-numbalsoda">Failure to Build <cite>numbalsoda</cite></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../userguide/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Reference Guide</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="expt.html">Configuring an Experiment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="expt.html#DAPyr.Expt"><code class="docutils literal notranslate"><span class="pre">Expt</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.modelParams"><code class="docutils literal notranslate"><span class="pre">Expt.modelParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.obsParams"><code class="docutils literal notranslate"><span class="pre">Expt.obsParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.basicParams"><code class="docutils literal notranslate"><span class="pre">Expt.basicParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.miscParams"><code class="docutils literal notranslate"><span class="pre">Expt.miscParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.states"><code class="docutils literal notranslate"><span class="pre">Expt.states</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.copyStates"><code class="docutils literal notranslate"><span class="pre">Expt.copyStates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.getBasicParams"><code class="docutils literal notranslate"><span class="pre">Expt.getBasicParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.getParam"><code class="docutils literal notranslate"><span class="pre">Expt.getParam()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.getParamNames"><code class="docutils literal notranslate"><span class="pre">Expt.getParamNames()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.getStates"><code class="docutils literal notranslate"><span class="pre">Expt.getStates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.modExpt"><code class="docutils literal notranslate"><span class="pre">Expt.modExpt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.modExptName"><code class="docutils literal notranslate"><span class="pre">Expt.modExptName()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.resetParams"><code class="docutils literal notranslate"><span class="pre">Expt.resetParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#DAPyr.Expt.saveExpt"><code class="docutils literal notranslate"><span class="pre">Expt.saveExpt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="expt.html#configurable-paramters">Configurable Paramters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#basicparams">basicParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#modelparams">modelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="expt.html#miscparams">miscParams</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="expt.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="runda.html">Running a Data Assimilation Experiment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="runda.html#DAPyr.runDA"><code class="docutils literal notranslate"><span class="pre">runDA()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="runda.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Helper Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#basic-helper-functions">Basic Helper Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.copyExpt"><code class="docutils literal notranslate"><span class="pre">copyExpt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#saving-and-reading-experiments">Saving and Reading Experiments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.loadParamFile"><code class="docutils literal notranslate"><span class="pre">loadParamFile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.loadExpt"><code class="docutils literal notranslate"><span class="pre">loadExpt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.saveExpt"><code class="docutils literal notranslate"><span class="pre">saveExpt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#plotting-and-visualization">Plotting and Visualization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.plotLocalization"><code class="docutils literal notranslate"><span class="pre">plotLocalization()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.plotExpt"><code class="docutils literal notranslate"><span class="pre">plotExpt()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/DAPyr.html">DAPyr</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DAPyr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Reference Guide</a></li>
+      <li class="breadcrumb-item active">Helper Functions</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/refguide/helper.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="helper-functions">
+<h1>Helper Functions<a class="headerlink" href="#helper-functions" title="Link to this heading"></a></h1>
+<section id="basic-helper-functions">
+<h2>Basic Helper Functions<a class="headerlink" href="#basic-helper-functions" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="DAPyr.copyExpt">
+<span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">copyExpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><span class="pre">Expt</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.copyExpt" title="Link to this definition"></a></dt>
+<dd><p>Create a deepcopy of an existing experiment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>expt</strong> (<a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><em>Expt</em></a>) – An instance of the Expt class.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A copy of the experiment.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt">Expt</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="saving-and-reading-experiments">
+<h2>Saving and Reading Experiments<a class="headerlink" href="#saving-and-reading-experiments" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="DAPyr.loadParamFile">
+<span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">loadParamFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.loadParamFile" title="Link to this definition"></a></dt>
+<dd><p>Create an experiment from params textfile.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to a textfile containing all configurable parameters, see sample files.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the Expt class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt">Expt</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="DAPyr.loadExpt">
+<span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">loadExpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.loadExpt" title="Link to this definition"></a></dt>
+<dd><p>Load an experiment from the filesystem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>file</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – A string containing the filepath to the experiment.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An instance of the Expt class.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt">Expt</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="DAPyr.saveExpt">
+<span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">saveExpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">expt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><span class="pre">Expt</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.saveExpt" title="Link to this definition"></a></dt>
+<dd><p>Save an experiment to the file system. Will save the file under ‘exptname.expt’.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>outputdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Path to directory where the experiment will be saved.</p></li>
+<li><p><strong>expt</strong> (<a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><em>Expt</em></a>) – The experiment instance to save.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+<section id="plotting-and-visualization">
+<h2>Plotting and Visualization<a class="headerlink" href="#plotting-and-visualization" title="Link to this heading"></a></h2>
+<dl class="py function">
+<dt class="sig sig-object py" id="DAPyr.plotLocalization">
+<span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">plotLocalization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><span class="pre">Expt</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.plotLocalization" title="Link to this definition"></a></dt>
+<dd><p>Plot the localization radius of an experiment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expt</strong> (<a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><em>Expt</em></a>) – An Expt instance to plot localization for.</p></li>
+<li><p><strong>ax</strong> (<em>_type_</em><em>, </em><em>optional</em>) – A matplotlib.pyplot <cite>Axes</cite> instance on which to plot localization onto, by default None. Must have a ‘3d’ projection specified.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A <cite>matplotlib.pyplot.Axes</cite> instance.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.pyplot.Axes</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="DAPyr.plotExpt">
+<span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">plotExpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expt</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><span class="pre">Expt</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">T</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><span class="pre">int</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotObs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotEns</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plotEnsMean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.plotExpt" title="Link to this definition"></a></dt>
+<dd><p>Plots the model truth, obs, ensembles, and ensemble mean at time T.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>expt</strong> (<a class="reference internal" href="expt.html#DAPyr.Expt" title="DAPyr.Expt"><em>Expt</em></a>) – An Expt instance to plot</p></li>
+<li><p><strong>T</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.13)"><em>int</em></a>) – The time step during the experiment to plot.</p></li>
+<li><p><strong>ax</strong> (<em>matplotlib.pyplot.Axes</em><em>, </em><em>optional</em>) – An instance of a matplotlib Axes to plot onto, by default None. Must have specified a ‘3d’ projection</p></li>
+<li><p><strong>plotObs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – A boolean to configure whether to plot observations, by default False</p></li>
+<li><p><strong>plotEns</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – A boolean to configure whether to plot ensemble members, by default True. Must have had saveEns configured to 1.</p></li>
+<li><p><strong>plotEnsMean</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a><em>, </em><em>optional</em>) – A boolean to configure whether to plot ensemble mean, by default False. Must have had saveEnsMean configured to 1.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A matplotlib.pyplot Axes instance</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>matplotlib.pyplot.Axes</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.13)"><strong>TypeError</strong></a> – Raised if Expt instance is not passed.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.13)"><strong>ValueError</strong></a> – Raised if the Expt instance passed has not be run through <cite>runDA()</cite>, or an invalid time step, T, provided.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="runda.html" class="btn btn-neutral float-left" title="Running a Data Assimilation Experiment" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="../api.html" class="btn btn-neutral float-right" title="API" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Maria Nikolaitchik.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

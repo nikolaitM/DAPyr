@@ -1,0 +1,682 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../">
+<head>
+  <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configuring an Experiment &mdash; DAPyr 0.1.0 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=b86133f3" />
+      <link rel="stylesheet" type="text/css" href="../_static/css/theme.css?v=e59714d7" />
+
+  
+      <script src="../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../_static/documentation_options.js?v=01f34227"></script>
+      <script src="../_static/doctools.js?v=9bcbadda"></script>
+      <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Running a Data Assimilation Experiment" href="runda.html" />
+    <link rel="prev" title="Reference Guide" href="index.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            DAPyr
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../userguide/index.html">User Guide</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../userguide/overview.html">Overview</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../userguide/overview.html#basic-usage">Basic usage</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../userguide/installation.html">Installation</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="../userguide/installation.html#troubleshooting">Troubleshooting</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="../userguide/installation.html#failure-to-build-numbalsoda">Failure to Build <cite>numbalsoda</cite></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="../userguide/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Reference Guide</a><ul class="current">
+<li class="toctree-l2 current"><a class="current reference internal" href="#">Configuring an Experiment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#DAPyr.Expt"><code class="docutils literal notranslate"><span class="pre">Expt</span></code></a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.modelParams"><code class="docutils literal notranslate"><span class="pre">Expt.modelParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.obsParams"><code class="docutils literal notranslate"><span class="pre">Expt.obsParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.basicParams"><code class="docutils literal notranslate"><span class="pre">Expt.basicParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.miscParams"><code class="docutils literal notranslate"><span class="pre">Expt.miscParams</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.states"><code class="docutils literal notranslate"><span class="pre">Expt.states</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.copyStates"><code class="docutils literal notranslate"><span class="pre">Expt.copyStates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.getBasicParams"><code class="docutils literal notranslate"><span class="pre">Expt.getBasicParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.getParam"><code class="docutils literal notranslate"><span class="pre">Expt.getParam()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.getParamNames"><code class="docutils literal notranslate"><span class="pre">Expt.getParamNames()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.getStates"><code class="docutils literal notranslate"><span class="pre">Expt.getStates()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.modExpt"><code class="docutils literal notranslate"><span class="pre">Expt.modExpt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.modExptName"><code class="docutils literal notranslate"><span class="pre">Expt.modExptName()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.resetParams"><code class="docutils literal notranslate"><span class="pre">Expt.resetParams()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="#DAPyr.Expt.saveExpt"><code class="docutils literal notranslate"><span class="pre">Expt.saveExpt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#configurable-paramters">Configurable Paramters</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#basicparams">basicParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#modelparams">modelParams</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#miscparams">miscParams</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="runda.html">Running a Data Assimilation Experiment</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="runda.html#DAPyr.runDA"><code class="docutils literal notranslate"><span class="pre">runDA()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="runda.html#examples">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="helper.html">Helper Functions</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="helper.html#basic-helper-functions">Basic Helper Functions</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="helper.html#DAPyr.copyExpt"><code class="docutils literal notranslate"><span class="pre">copyExpt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="helper.html#saving-and-reading-experiments">Saving and Reading Experiments</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="helper.html#DAPyr.loadParamFile"><code class="docutils literal notranslate"><span class="pre">loadParamFile()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="helper.html#DAPyr.loadExpt"><code class="docutils literal notranslate"><span class="pre">loadExpt()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="helper.html#DAPyr.saveExpt"><code class="docutils literal notranslate"><span class="pre">saveExpt()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="helper.html#plotting-and-visualization">Plotting and Visualization</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="helper.html#DAPyr.plotLocalization"><code class="docutils literal notranslate"><span class="pre">plotLocalization()</span></code></a></li>
+<li class="toctree-l4"><a class="reference internal" href="helper.html#DAPyr.plotExpt"><code class="docutils literal notranslate"><span class="pre">plotExpt()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../api.html">API</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="../generated/DAPyr.html">DAPyr</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">DAPyr</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content style-external-links">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="index.html">Reference Guide</a></li>
+      <li class="breadcrumb-item active">Configuring an Experiment</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="../_sources/refguide/expt.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="configuring-an-experiment">
+<h1>Configuring an Experiment<a class="headerlink" href="#configuring-an-experiment" title="Link to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="DAPyr.Expt">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">DAPyr.</span></span><span class="sig-name descname"><span class="pre">Expt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.Expt" title="Link to this definition"></a></dt>
+<dd><p>Initialize a Data Assimilation experiment and configurable parameters.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="DAPyr.Expt.modelParams">
+<span class="sig-name descname"><span class="pre">modelParams</span></span><a class="headerlink" href="#DAPyr.Expt.modelParams" title="Link to this definition"></a></dt>
+<dd><p>A dictionary containing all parameters initializing the chosen toy model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="DAPyr.Expt.obsParams">
+<span class="sig-name descname"><span class="pre">obsParams</span></span><a class="headerlink" href="#DAPyr.Expt.obsParams" title="Link to this definition"></a></dt>
+<dd><p>A dictionary containing all parameters initializing observations.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="DAPyr.Expt.basicParams">
+<span class="sig-name descname"><span class="pre">basicParams</span></span><a class="headerlink" href="#DAPyr.Expt.basicParams" title="Link to this definition"></a></dt>
+<dd><p>A dictionary containing all parameters initializing basic experimental set-up.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="DAPyr.Expt.miscParams">
+<span class="sig-name descname"><span class="pre">miscParams</span></span><a class="headerlink" href="#DAPyr.Expt.miscParams" title="Link to this definition"></a></dt>
+<dd><p>A dictionary containing all parameters initializing output and other miscellaneous parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="DAPyr.Expt.states">
+<span class="sig-name descname"><span class="pre">states</span></span><a class="headerlink" href="#DAPyr.Expt.states" title="Link to this definition"></a></dt>
+<dd><p>A dictionary containing all state vectors (model truth, observations, and initial ensemble states).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.copyStates">
+<span class="sig-name descname"><span class="pre">copyStates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">expt</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.Expt.copyStates" title="Link to this definition"></a></dt>
+<dd><p>Copy the states (model truth, initial ensemble, and observations) from another experiment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>expt</strong> (<a class="reference internal" href="#DAPyr.Expt" title="DAPyr.Expt"><em>Expt</em></a>) – The experiment to copy the states from.</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.13)"><strong>TypeError</strong></a> – Experiment instance not provided.</p></li>
+<li><p><strong>dapExceptions.MismatchModelSize</strong> – Model flags do not match between experiments.</p></li>
+<li><p><strong>dapExceptions.MismatchTimeSteps</strong> – Attempting to copy from experiment with less time steps than current experiment.</p></li>
+<li><p><strong>dapExceptions.MismatchObs</strong> – Number of assimilated observations do not match between experiments.</p></li>
+<li><p><strong>dapExceptions.MismatchEnsSize</strong> – Attempting to copy from experiment with less ensemble members than current experiment.</p></li>
+<li><p><strong>dapExceptions.MismatchOperator</strong> – Measurement operator flags do not match between experiments.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.getBasicParams">
+<span class="sig-name descname"><span class="pre">getBasicParams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a></span></span><a class="headerlink" href="#DAPyr.Expt.getBasicParams" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the basic parameters describing the experiment (Ne, Nx, T, and dt).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>Ne</strong> (<em>int</em>) – Number of ensemble members</p></li>
+<li><p><strong>Nx</strong> (<em>int</em>) – Number of model states</p></li>
+<li><p><strong>T</strong> (<em>int</em>) – Number of time steps the experiment will run for</p></li>
+<li><p><strong>dt</strong> (<em>float</em>) – The model time increment</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.getParam">
+<span class="sig-name descname"><span class="pre">getParam</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">param</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.Expt.getParam" title="Link to this definition"></a></dt>
+<dd><p>Retrieve the value of a parameter stored in the Expt class.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><cite>getParam</cite> returns <strong>immutable</strong> instances of the state vectors <cite>xt</cite>, <cite>Y</cite>, and <cite>xf_0</cite>, meaning that modifying instances returned by <cite>getParam</cite> will not modifying the instances stored in the <cite>Expt</cite> object itself. To modify the states of an experiment after spinup, access them directly through the <cite>expt.states</cite> dictionary.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>param</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – Name of parameter to retrieve</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Value of the requested parameter</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>param_value</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.getParamNames">
+<span class="sig-name descname"><span class="pre">getParamNames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)"><span class="pre">list</span></a></span></span><a class="headerlink" href="#DAPyr.Expt.getParamNames" title="Link to this definition"></a></dt>
+<dd><p>Retrieve all modifiable parameters in the Expt class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>None</strong></p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>a list of available parameters to modify</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.13)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.getStates">
+<span class="sig-name descname"><span class="pre">getStates</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.13)"><span class="pre">tuple</span></a></span></span><a class="headerlink" href="#DAPyr.Expt.getStates" title="Link to this definition"></a></dt>
+<dd><dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>xf_0</strong> (<em>numpy.ndarray</em>) – Initial ensemble state that begins the experiment. Size (Nx, Ne)</p></li>
+<li><p><strong>xt</strong> (<em>numpy.ndarray</em>) – Model truth states throughout the experiment. Size (T, Nx)</p></li>
+<li><p><strong>Y</strong> (<em>numpy.ndarray</em>) – Observations throughout the experiment. Size (Ny, T, 1)</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.modExpt">
+<span class="sig-name descname"><span class="pre">modExpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><span class="pre">dict</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">reqUpdate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.Expt.modExpt" title="Link to this definition"></a></dt>
+<dd><p>Modify a parameter in the Expt class, recalculating new initial states if necessary.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Modifying most parameters will cause a recalculation of all state vectors. To maintain consistent ensemble states across modification, consider setting the <cite>seed</cite> parameter in your experiment.</p>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.13)"><em>dict</em></a>) – A dictionary containing the parameter to modify and its new modified value</p></li>
+<li><p><strong>reqUpdate</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.13)"><em>bool</em></a>) – A boolean determining whether recalculation of new states should be forced</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.modExptName">
+<span class="sig-name descname"><span class="pre">modExptName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">exptname</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference external" href="https://docs.python.org/3/library/constants.html#None" title="(in Python v3.13)"><span class="pre">None</span></a></span></span><a class="headerlink" href="#DAPyr.Expt.modExptName" title="Link to this definition"></a></dt>
+<dd><p>Modify the name of the Experiment</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>exptname</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a>) – New experiment name</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.resetParams">
+<span class="sig-name descname"><span class="pre">resetParams</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.Expt.resetParams" title="Link to this definition"></a></dt>
+<dd><p>Reset all Expt parameters to their default values.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="DAPyr.Expt.saveExpt">
+<span class="sig-name descname"><span class="pre">saveExpt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">outputdir</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><span class="pre">str</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#DAPyr.Expt.saveExpt" title="Link to this definition"></a></dt>
+<dd><p>Save the experiment to the filesystem. Experiments are saved with the filename [exptname].expt</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>outputdir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.13)"><em>str</em></a><em>, </em><em>optional</em>) – Path to directory where to save the experiment , by default the value stored in the <cite>output_dir</cite> parameter.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<section id="configurable-paramters">
+<h2>Configurable Paramters<a class="headerlink" href="#configurable-paramters" title="Link to this heading"></a></h2>
+<section id="basicparams">
+<h3>basicParams<a class="headerlink" href="#basicparams" title="Link to this heading"></a></h3>
+<p>Parameters in the <em>basicParams</em> attribute store information that define the basic structure of the experiment, such as how long to run the experiment for, how many ensemble members to run, and what data assimilation method to use.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>T</cite></p></td>
+<td><p>100</p></td>
+<td><p>Total number of time steps in experiment</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>dt</cite></p></td>
+<td><p>Model Specific</p></td>
+<td><p>Model time step increment</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>Ne</cite></p></td>
+<td><p>10</p></td>
+<td><p>Number of ensemble members</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>expt_flag</cite></p></td>
+<td><p>0</p></td>
+<td><dl>
+<dt>Flag to select which Data Assimilation method to use</dt><dd><div class="line-block">
+<div class="line">0: EnSRF</div>
+<div class="line">1: Local Particle Filter</div>
+<div class="line">2: No Data Assimilation</div>
+</div>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-even"><td><p><cite>seed</cite></p></td>
+<td><p>-1</p></td>
+<td><p>Seed for random number generator. Set to -1 to turn off.</p></td>
+</tr>
+</tbody>
+</table>
+<p>obsParams</p>
+<p>The <em>obsParams</em> attribute stores all parameters relating to the observations to assimilation, from what measurement operator to use to prescribing observation error. Additionally, the <em>obsParam</em> attribute stores parameters relating to coniguring the data assimilation methods.</p>
+<blockquote>
+<div><ul>
+<li><ul class="simple">
+<li><p>Paramter</p></li>
+<li><p>Default</p></li>
+<li><p>Description</p></li>
+</ul>
+</li>
+<li><ul>
+<li><p><cite>h_flag</cite></p></li>
+<li><p>0</p></li>
+<li><dl>
+<dt>Flag to select measurement operator to use</dt><dd><div class="line-block">
+<div class="line">0: Linear (Hx = x)</div>
+<div class="line">1: Quadratic (Hx = x^2)</div>
+<div class="line">2: Logarithmic (Hx = log(abs(x)))</div>
+</div>
+</dd>
+</dl>
+</li>
+</ul>
+</li>
+<li><ul class="simple">
+<li><p><cite>sig_y</cite></p></li>
+<li><p>1.0</p></li>
+<li><p>Observations Standard Deviation</p></li>
+</ul>
+</li>
+<li><ul class="simple">
+<li><p><cite>tau</cite></p></li>
+<li><p>1</p></li>
+<li><p>Number of cycles between data assimilation cycles</p></li>
+</ul>
+</li>
+<li><ul class="simple">
+<li><p><cite>obf</cite></p></li>
+<li><p>1</p></li>
+<li><p>Observation spatial frequency. Spacing between assimilated observations</p></li>
+</ul>
+</li>
+<li><ul class="simple">
+<li><p><cite>obb</cite></p></li>
+<li><p>0</p></li>
+<li><p>Observation buffer. Initial number of observations to skip, used to simulate large spatial gaps in observation coverage.</p></li>
+</ul>
+</li>
+<li><ul class="simple">
+<li><p><cite>localize</cite></p></li>
+<li><p>1</p></li>
+<li><p>Whether to turn on localization. 0 is off, 1 is on.</p></li>
+</ul>
+</li>
+<li><ul class="simple">
+<li><p><cite>roi</cite></p></li>
+<li><p>0.005</p></li>
+<li><p>Localization radius of influence</p></li>
+</ul>
+</li>
+</ul>
+</div></blockquote>
+<p><strong>Kalman Filter Parameters</strong></p>
+<p>Below are all parameters directly configuring the ensemble square root filter.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>gamma</cite></p></td>
+<td><p>0.00</p></td>
+<td><p>Inflation parameter for Relaxation to Prior Spread (RTPS).</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Local Particle Filter Parameters</strong></p>
+<p>Below are all parameters directly configuring the local particle filter.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>mixing_gamma</cite></p></td>
+<td><p>0.3</p></td>
+<td><p>Mixing coefficient between prior resampled particles and current particles</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>kddm_flag</cite></p></td>
+<td><p>0</p></td>
+<td><p>Flag to turn on kernel density estimation step. 0 is off, 1 is on</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>min_res</cite></p></td>
+<td><p>0.0</p></td>
+<td><p>Minimum residual for beta inflation</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>maxiter</cite></p></td>
+<td><p>1</p></td>
+<td><p>Maximum number of incremental steps of LPF updates to make</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>Nt_eff</cite></p></td>
+<td><p>0.4</p></td>
+<td><p>Effective ensemble size</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="modelparams">
+<h3>modelParams<a class="headerlink" href="#modelparams" title="Link to this heading"></a></h3>
+<p>The <em>modelParams</em> attribute stores parameters configuring the chosen model for the experimenting. Inside the <em>modelParams</em> dictionary is another dictionary, <cite>model_params</cite>, which separately stores the parameters for tuning model physics.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>model_flag</cite></p></td>
+<td><p>0</p></td>
+<td><dl>
+<dt>Flag to select model to use</dt><dd><div class="line-block">
+<div class="line">0 : Lorenz (1963)</div>
+<div class="line">1 : Lorenz (1996)</div>
+<div class="line">2 : Lorenz (2005)</div>
+</div>
+</dd>
+</dl>
+</td>
+</tr>
+<tr class="row-odd"><td><p><cite>model_params</cite></p></td>
+<td><p>See <a class="reference internal" href="#id1"><span class="std std-ref">Model Parameters</span></a></p></td>
+<td><p>Configuration of parameters that drive each Lorenz model.</p></td>
+</tr>
+</tbody>
+</table>
+<p id="id1"><strong>Model Parameters</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Lorenz (1963)</p></td>
+<td><p>s</p></td>
+<td><p>10</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>r</p></td>
+<td><p>28</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>b</p></td>
+<td><p>8/3</p></td>
+</tr>
+<tr class="row-odd"><td><p>Lorenz (1996)</p></td>
+<td><p>F</p></td>
+<td><p>8</p></td>
+</tr>
+<tr class="row-even"><td><p>Lorenz (2005)</p></td>
+<td><p>l05_F</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>l05_Fe</p></td>
+<td><p>15</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>l05_K</p></td>
+<td><p>32</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>l05_I</p></td>
+<td><p>12</p></td>
+</tr>
+<tr class="row-even"><td></td>
+<td><p>l05_b</p></td>
+<td><p>10.0</p></td>
+</tr>
+<tr class="row-odd"><td></td>
+<td><p>l05_c</p></td>
+<td><p>2.5</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="miscparams">
+<h3>miscParams<a class="headerlink" href="#miscparams" title="Link to this heading"></a></h3>
+<p>The <em>miscParams</em> attribute stores all parameters relating to experiment output, as well as other miscellaneous features.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>output_dir</cite></p></td>
+<td><p>‘./’</p></td>
+<td><p>The default file path for saving the experiment</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>numPool</cite></p></td>
+<td><p>8</p></td>
+<td><p>Number of subprocesses to spawn when conducting model integration and model spinup</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>saveEns</cite></p></td>
+<td><p>0</p></td>
+<td><p>Should the analysis ensemble state be stored each time step in <cite>x_ens</cite>. 0 is False, 1 is True.</p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>saveEnsMean</cite></p></td>
+<td><p>1</p></td>
+<td><p>Should the analysis ensemble mean state be stored each time in <cite>x_ensmean</cite>. 0 is False, 1 is True.</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>saveForecastEns</cite></p></td>
+<td><p>0</p></td>
+<td><p>Should the forecast ensemble stae be stored each time step in <cite>x_fore_ens</cite>. 0 is False, 1 is True.</p></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Singular Vector Parameters</strong></p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Paramter</p></th>
+<th class="head"><p>Default</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><cite>doSV`</cite></p></td>
+<td><p>0</p></td>
+<td><p>Should singular vectors be calculated according to <a class="reference external" href="https://journals.ametsoc.org/view/journals/mwre/131/8/_2559.1.xml">Whitaker and Hamill (2002)</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><cite>stepSV</cite></p></td>
+<td><p>1</p></td>
+<td><p>Number of time steps to skip between SV calculations</p></td>
+</tr>
+<tr class="row-even"><td><p><cite>forecastSV</cite></p></td>
+<td><p>4</p></td>
+<td><p>Optimization time interval</p></td>
+</tr>
+<tr class="row-odd"><td><p>outputSV</p></td>
+<td><p><cite>output_dir</cite></p></td>
+<td><p>Output directory for SV calculation files</p></td>
+</tr>
+<tr class="row-even"><td><p>storeCovar</p></td>
+<td><p>0</p></td>
+<td><p>Flag to determine whether to store the analysis and forecast SV ensemble states. 0 is False, 1 is True</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="examples">
+<h2>Examples<a class="headerlink" href="#examples" title="Link to this heading"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Reference Guide" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="runda.html" class="btn btn-neutral float-right" title="Running a Data Assimilation Experiment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Maria Nikolaitchik.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
