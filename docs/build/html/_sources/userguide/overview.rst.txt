@@ -1,5 +1,0 @@
-Overview
-=========
-
-DAPyr's core functionality can be divided into two core modules: the ``DAPyr.Expt`` class and the ``DAPyr.runDA()`` function.
-

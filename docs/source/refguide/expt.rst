@@ -1,5 +1,5 @@
 Configuring an Experiment
-========================
+==============================
 
 .. autoclass:: DAPyr::Expt
       :class-doc-from: class

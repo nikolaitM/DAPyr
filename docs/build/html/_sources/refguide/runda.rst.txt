@@ -1,8 +1,0 @@
-``runDA()`` Function
-=========================
-
-.. autosummary:: DAPyr.runDA
-
-
-Examples
-----------
