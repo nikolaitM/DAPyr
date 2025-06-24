@@ -1,5 +1,4 @@
 import sys
-sys.path.insert(0,'../src/')
 import unittest
 import DAPyr as dap
 import numpy as np
@@ -11,12 +10,12 @@ import DAPyr.Exceptions
 class TestDA(unittest.TestCase):
 
       def setUp(self):
-            self.xf = np.loadtxt('./states/xf.txt', delimiter = ',')
-            self.Y = np.loadtxt('./states/Y.txt', delimiter = ',')
+            self.xf = np.loadtxt('./tests/states/xf.txt', delimiter = ',')
+            self.Y = np.loadtxt('./tests/states/Y.txt', delimiter = ',')
             return super().setUp()
       
       def test_EnSRF_NoLocalize(self):
-            xa_true = np.loadtxt('./states/enkf_xa_nolocalize.txt', delimiter = ',')
+            xa_true = np.loadtxt('./tests/states/enkf_xa_nolocalize.txt', delimiter = ',')
             xf = self.xf
             Y = self.Y
             Nx, Ne = self.xf.shape
@@ -32,7 +31,7 @@ class TestDA(unittest.TestCase):
             self.assertTrue(np.allclose(xa_true, xa))
 
       def test_EnSRF_Localize(self):
-            xa_true = np.loadtxt('./states/enkf_xa_localized_001.txt', delimiter = ',')
+            xa_true = np.loadtxt('./tests/states/enkf_xa_localized_001.txt', delimiter = ',')
             xf = self.xf
             Y = self.Y
             Nx, Ne = self.xf.shape
@@ -81,7 +80,7 @@ class TestDA(unittest.TestCase):
             self.assertTrue(e_flag == 1)
 
       def test_LPF_Localize(self):
-            xa_true = np.loadtxt('./states/lpf_xa_localize_001.txt', delimiter = ',')
+            xa_true = np.loadtxt('./tests/states/lpf_xa_localize_001.txt', delimiter = ',')
             xf = self.xf
             Y = self.Y
             Nx, Ne = xf.shape
@@ -104,7 +103,7 @@ class TestDA(unittest.TestCase):
             self.assertTrue(np.allclose(xa_true, xa))
       
       def test_LPF_NoLocalize(self):
-            xa_true = np.loadtxt('./states/lpf_xa_nolocalize.txt', delimiter = ',')
+            xa_true = np.loadtxt('./tests/states/lpf_xa_nolocalize.txt', delimiter = ',')
             xf = self.xf
             Y = self.Y
             Nx, Ne = xf.shape
@@ -171,7 +170,7 @@ class TestDA(unittest.TestCase):
             self.assertTrue(e_flag == 1)
 
       def test_Y_dim_LPF(self):
-            xa_true = np.loadtxt('./states/lpf_xa_localize_001.txt', delimiter = ',')
+            xa_true = np.loadtxt('./tests/states/lpf_xa_localize_001.txt', delimiter = ',')
             xf = self.xf
             Y = self.Y
             Nx, Ne = xf.shape
@@ -194,7 +193,7 @@ class TestDA(unittest.TestCase):
             self.assertTrue(np.allclose(xa_true, xa))
 
       def test_Y_dim_EnSRF(self):
-            xa_true = np.loadtxt('./states/enkf_xa_localized_001.txt', delimiter = ',')
+            xa_true = np.loadtxt('./tests/states/enkf_xa_localized_001.txt', delimiter = ',')
             xf = self.xf
             Y = self.Y
             Nx, Ne = self.xf.shape

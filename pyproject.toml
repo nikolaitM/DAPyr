@@ -28,6 +28,7 @@ dependencies = [
 ]
 [project.urls]
 Homepage = "https://github.com/nikolaitM/DApyr"
+Documentation = "https://dapyr.readthedocs.io/en/latest/"
 Issues = "https://github.com/nikolaitM/DApyr/issues"
 
 [tool.hatch.build.targets.wheel]

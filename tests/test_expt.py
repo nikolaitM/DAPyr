@@ -1,5 +1,4 @@
 import sys
-sys.path.insert(0,'../src/')
 import unittest
 import DAPyr as dap
 from unittest.mock import patch
@@ -20,17 +19,17 @@ def loadStates(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, h_flag, H):
     '''
     match Nx:
         case 3: #L63
-            xf_0 = np.load('./states/L63_xf_0.npy')
-            xt = np.load('./states/L63_xt.npy')
-            Y = np.load('./states/L63_Y.npy')
+            xf_0 = np.load('./tests/states/L63_xf_0.npy')
+            xt = np.load('./tests/states/L63_xt.npy')
+            Y = np.load('./tests/states/L63_Y.npy')
         case 40: #L96
-            xf_0 = np.load('./states/L96_xf_0.npy')
-            xt = np.load('./states/L96_xt.npy')
-            Y = np.load('./states/L96_Y.npy')
+            xf_0 = np.load('./tests/states/L96_xf_0.npy')
+            xt = np.load('./tests/states/L96_xt.npy')
+            Y = np.load('./tests/states/L96_Y.npy')
         case 480: #L05
-            xf_0 = np.load('./states/L05_xf_0.npy')
-            xt = np.load('./states/L05_xt.npy')
-            Y = np.load('./states/L05_Y.npy')
+            xf_0 = np.load('./tests/states/L05_xf_0.npy')
+            xt = np.load('./tests/states/L05_xt.npy')
+            Y = np.load('./tests/states/L05_Y.npy')
     return xf_0, xt, Y
 
 
@@ -71,7 +70,7 @@ class TestExptMethod(unittest.TestCase):
             expt = dap.Expt('test', {'model_flag': flag})
             for par in paramsList:
                 expt_par = expt.getParam(par)
-                init_par = np.load('./states/{}_{}.npy'.format(L, par))
+                init_par = np.load('./tests/states/{}_{}.npy'.format(L, par))
                 np.testing.assert_array_equal(expt_par, init_par)
             del(expt)
         self.patcher.stop()
@@ -134,7 +133,7 @@ class TestExptMethod(unittest.TestCase):
         params = ['xf_0', 'xt', 'Y']
         xf_0, xt, Y = expt.getStates()
         for par, var in zip(params, [xf_0, xt, Y]):
-            np.testing.assert_equal(var, np.load('./states/L63_{}.npy'.format(par)))
+            np.testing.assert_equal(var, np.load('./tests/states/L63_{}.npy'.format(par)))
         self.patcher.stop()
     
     def test_equality(self):
