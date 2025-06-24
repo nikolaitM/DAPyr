@@ -32,7 +32,8 @@ jobs:
         path: dist/
 
     - name: Test with pytest  
-      run: |  
+      run: |
+        pip install pytest pytest-cov  
         coverage run -m pytest  -v -s  
     - name: Generate Coverage Report  
       run: |  
