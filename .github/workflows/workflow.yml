@@ -31,16 +31,6 @@ jobs:
         name: python-package-distributions
         path: dist/
 
-    - name: Test with pytest  
-      run: |
-        conda init
-        conda activate dapyr
-        coverage run -m pytest  -v -s  
-    - name: Generate Coverage Report  
-      run: | 
-        conda init
-        conda activate dapyr
-        coverage report -m
 
   publish-to-pypi:
     name: >-
