@@ -31,6 +31,13 @@ jobs:
         name: python-package-distributions
         path: dist/
 
+    - name: Test with pytest  
+      run: |  
+        coverage run -m pytest  -v -s  
+    - name: Generate Coverage Report  
+      run: |  
+        coverage report -m
+
   publish-to-pypi:
     name: >-
       Publish distribution to PyPI
@@ -40,7 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: pypi
-      url: https://pypi.org/p/DAPyr  # Replace <package-name> with your PyPI project name
+      url: https://pypi.org/p/DAPyr
     permissions:
       id-token: write  # IMPORTANT: mandatory for trusted publishing
 

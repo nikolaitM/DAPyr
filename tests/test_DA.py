@@ -3,6 +3,7 @@ sys.path.insert(0,'../src/')
 import unittest
 import DAPyr as dap
 import numpy as np
+import pytest
 import copy
 import DAPyr.MISC
 import DAPyr.Exceptions
@@ -46,7 +47,7 @@ class TestDA(unittest.TestCase):
             var_y = 1
             xa, e_flag = dap.DA.EnSRF_update(xf, xf, xm , xm, Y[:, None], C, np.matmul(C, H.T), var_y, gamma, e_flag, qcpass)
             self.assertTrue(np.allclose(xa_true, xa))
-
+      @pytest.mark.filterwarnings("ignore:No observations")
       def test_EnSRF_qaqc(self):
             xf = self.xf
             Y = self.Y
@@ -101,7 +102,7 @@ class TestDA(unittest.TestCase):
             xa, e_flag = dap.DA.lpf_update(xf, xf, Y[:, None], var_y, H, C, N_eff*Ne, alpha, 
                                           min_res, maxiter, kddm_flag, e_flag, qcpass)
             self.assertTrue(np.allclose(xa_true, xa))
-
+      
       def test_LPF_NoLocalize(self):
             xa_true = np.loadtxt('./states/lpf_xa_nolocalize.txt', delimiter = ',')
             xf = self.xf
@@ -122,7 +123,7 @@ class TestDA(unittest.TestCase):
             xa, e_flag = dap.DA.lpf_update(xf, xf, Y[:, None], var_y, H, C, N_eff*Ne, alpha, 
                                min_res, maxiter, kddm_flag, e_flag, qcpass)
             self.assertTrue(np.allclose(xa_true, xa))
-
+      @pytest.mark.filterwarnings("ignore:No observations")
       def test_LPF_qaqc(self):
       #Test that if nothing passes QAQC, that an error flag is returned
             xf = self.xf

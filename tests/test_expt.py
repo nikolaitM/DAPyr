@@ -5,9 +5,7 @@ import DAPyr as dap
 from unittest.mock import patch
 import numpy as np
 import copy
-import DAPyr.MISC
-import DAPyr.Exceptions
-
+import pytest
 
 def loadStates(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, h_flag, H):
     '''A mock function that will replace the Expt._spinup method.
@@ -115,7 +113,8 @@ class TestExptMethod(unittest.TestCase):
         e1 = dap.Expt('test1')
         e2 = dap.Expt('test2', {'obf': 2})
         self.assertRaises(dap.Exceptions.MismatchObs, e2.copyStates, e1)
-
+    
+    @pytest.mark.filterwarnings("ignore:Time steps do not match")
     def test_copyExptDiffTime(self):
         '''Test if using copyStates method takes a subset of timesteps'''
         e1 = dap.Expt('test1') #Default timesteps of 100
