@@ -2,6 +2,8 @@
 
 DAPyr (pronounced "dapper") is a Python package for running, testing, and experimenting with data assimilation methods using Lorenz models. DAPyr supports quick configuration and running of experiments, allowing one to setup and run data assimilation cycles in as little as two lines. In addition, DAPyr utilizes [numbalsoda](https://github.com/Nicholaswogan/numbalsoda/tree/main) and [numba](https://numba.pydata.org/) for model integration, allowing for faster runtimes.
 
+For a in-depth tutorials and explanations, see the [documentation](https://dapyr.readthedocs.io/en/latest/).
+
 DAPyr currently supports the following functions:
 
 ### Models:
