@@ -1,19 +1,23 @@
 import numpy as np
 import copy
-from numbalsoda import lsoda_sig, solve_ivp
+from numbalsoda import lsoda_sig, solve_ivp, lsoda
 from numba import cfunc
 import numba as nb
 
 def model(x, dt, T, funcptr):
+      model_error = 0
       tspan = np.array([0, dt*T])
       usol = copy.deepcopy(x)
-      tmp = solve_ivp(funcptr, tspan, usol, tspan, rtol = 1e-9, atol = 1e-30)
-      # tmp, success = lsoda(funcptr, usol, tspan)
-      #for t in range(T):
-      #      tmp, success = lsoda(funcptr, usol, tspan)
-      #      usol = tmp[-1, :]
-      #return usol 
-      return tmp.y[-1, :]
+      #Try with a Runga Kutta Method first
+      sol = solve_ivp(funcptr, tspan, usol, tspan, rtol = 1e-9, atol = 1e-30)
+      tmp, success = sol.y, sol.success
+      # There are points when L63 changes attractor when the problem becomes stiff 
+      # If so, retry with a stiff LSODA solver
+      if not success or np.allclose(tmp[-1, :], 0.0):
+            tmp, success = lsoda(funcptr, usol, tspan, rtol = 1e-9, atol = 1e-30)
+      if not success or np.allclose(tmp[-1, :], 0.0):
+            model_error = 1
+      return tmp[-1, :], model_error
 
 def make_rhs_l63(kwargs):
       s = kwargs['s']

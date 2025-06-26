@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "DAPyr"
-version = "0.0.10"
+version = "0.0.12"
 authors = [
   { name="Maria Nikolaitchik", email="mnikolai@umd.edu" },
 ]
@@ -43,3 +43,6 @@ include = [
 pythonpath = [
   "src",
 ]
+
+[tool.poetry]
+exclude = ["tests", "**/*.ipynb"]

@@ -108,25 +108,42 @@ class Expt:
             else:
                   rng = np.random
             xt_0 = 3*np.sin(np.arange(Nx)/(6*2*np.pi))
-            xt_0 = MODELS.model(xt_0, dt, 100, funcptr)
-            
+            xt_0, model_error = MODELS.model(xt_0, dt, 100, funcptr)
+
+            if model_error != 0:
+                  warnings.warn('Model integration failed.')
+                  self.modExpt({'status': 'init model error'})
+
             #Multiprocessing
             xf_0 = xt_0[:, np.newaxis] + 1*rng.randn(Nx, Ne)
             pfunc = partial(MODELS.model, dt = dt, T = 100, funcptr=funcptr)
             
             with mp.get_context('fork').Pool(numPool) as pool:
-                  xf_0 = np.stack(pool.map(pfunc, [xf_0[:, i] for i in range(Ne)]), axis = -1)
-            
+                  pool_results  = pool.map(pfunc, [xf_0[:, i] for i in range(Ne)])
+                  xf_0 = np.stack([x for x, _ in pool_results], axis = -1)
+                  model_errors = np.array([y for _, y in pool_results])
+            if np.any(model_errors != 0):
+                  warnings.warn('Model integration failed.')
+                  self.modExpt({'status': 'init model error'})
             #for n in range(Ne):
-            #      xf_0[:, n] = MODELS.model(xf_0[:, n], dt, 100, funcptr)
-
+            #      xf_0[:, n], model_error = MODELS.model(xf_0[:, n], dt, 100, funcptr)
+            #      if model_error != 0 :
+            #           warnings.warn('Model integration failed.')
+            #           self.modExpt({'status': 'init model error'})
+      
             #Create Model Truth
             xt = np.zeros((Nx, T))
-            xt[:,0] = MODELS.model(xt_0, dt, 100, funcptr)
+            xt[:,0], model_error = MODELS.model(xt_0, dt, 100, funcptr)
+
+            if model_error != 0:
+                  warnings.warn('Model integration failed.')
+                  self.modExpt({'status': 'init model error'})
 
             for t in range(T-1):
-                  xt[:, t+1] = MODELS.model(xt[:, t], dt, tau, funcptr)
-
+                  xt[:, t+1], model_error = MODELS.model(xt[:, t], dt, tau, funcptr)
+                  if model_error != 0:
+                        warnings.warn('Model integration failed.')
+                        self.modExpt({'status': 'init model error'})
             #Synthetic Observations
             dum = rng.randn(T, Nx).T*sig_y
             match h_flag:
@@ -183,7 +200,6 @@ class Expt:
             #Clear old RMSE, spread, and saved runtime attributes
             self._clearAttributes()
             #Model Truth            
-            model_flag = self.modelParams['model_flag']
             dt = self.basicParams['dt']
             Ne = self.basicParams['Ne']
             T = self.basicParams['T']
@@ -411,8 +427,10 @@ class Expt:
             ------------------------
             status: {self.getParam('status')} # Notes the status of the given experiment
                   init: The experiment has been initialized and spun-up, but not run using runDA
-                  init error: An error occured while spinning up the experiment
-                  run error: An error occured while running the experiment 
+                  init error: An error occurred while spinning up the experiment
+                  init model error: An error occurred in spin up during model integration
+                  run DA error: An error occured while running the experiment during the DA step
+                  run model error: An error occurred in the experiment run during model integration
                   completed: runDA has been called and the experiment completed without errors
             output_dir: {self.getParam('output_dir')} # Default output dir for saving experiment-related material
             saveEns: {self.getParam('saveEns')} # Determines whether full posterior ensemble state is saved at each time step
@@ -753,6 +771,7 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
 
       if expt.getParam('status') != 'completed':
             raise ValueError('Experiment has not run DA successfully')
+
             
       Nx = expt.getParam('Nx')
       Ne = expt.getParam('Ne')
@@ -903,6 +922,9 @@ def runDA(expt: Expt, maxT : int = None):
             A string specifying the status of the run.
       '''
       # Basic Parameters
+      if expt.getParam('status') != 'init':
+            raise ValueError('Experiment did not initialize successfully. Cannot run experiment further.')
+      
       Ne, Nx, T, dt = expt.getBasicParams()
 
       if maxT is not None:
@@ -926,7 +948,7 @@ def runDA(expt: Expt, maxT : int = None):
       gamma = expt.getParam('gamma')
 
       #Flags
-      h_flag, expt_flag = expt.getParam('h_flag'), expt.getParam('expt_flag')
+      h_flag, expt_flag= expt.getParam('h_flag'), expt.getParam('expt_flag')
 
       #Model Parameters
       params, funcptr = expt.getParam('model_params'), expt.getParam('funcptr')
@@ -1020,8 +1042,9 @@ def runDA(expt: Expt, maxT : int = None):
                         xa = xf
 
             if e_flag != 0:
-                  expt.modExpt({'status': 'run_error'})
-                  return
+                  pool.close()
+                  expt.modExpt({'status': 'run DA error'})
+                  return expt.getParam('status')
             
             #TODO Add parameter that controls how often statistics are stored
             
@@ -1033,7 +1056,15 @@ def runDA(expt: Expt, maxT : int = None):
                  
             if doSV == 1 and t % stepSV == 0:
                   #Run SV calculation  
-                  xf_sv= np.stack(pool.map(svpfunc, [xa[:, i] for i in range(Ne)]), axis = -1)
+                  #xf_sv= np.stack(pool.map(svpfunc, [xa[:, i] for i in range(Ne)]), axis = -1)
+                  pool_results  = pool.map(svpfunc, [xa[:, i] for i in range(Ne)])
+                  xf_sv = np.stack([x for x, _ in pool_results], axis = -1)
+                  model_errors = np.array([y for _, y in pool_results])
+                  if np.any(model_errors != 0):
+                        pool.close()
+                        warnings.warn('Model integration failed at time T = {}. Terminating Experiment'.format(t))
+                        expt.modExpt({'status': 'run model error'})
+                        return expt.getParam('status')
                   (sv_data['initial'][1][countSV, :, :], sv_data['evolved'][1][countSV, :, :], 
                   sv_data['energy'][1][countSV, :], sv_data['evalue'][1][countSV, :]) = MISC.calc_SV(xa, xf_sv)
                   if storeCovar != 0:
@@ -1046,12 +1077,24 @@ def runDA(expt: Expt, maxT : int = None):
 
             #Model integrate forward
             #Multiprocessing
-            xf = np.stack(pool.map(pfunc, [xa[:, i] for i in range(Ne)]), axis = -1)
+            #xf = np.stack(pool.map(pfunc, [xa[:, i] for i in range(Ne)]), axis = -1)
+            pool_results  = pool.map(pfunc, [xa[:, i] for i in range(Ne)])
+            xf = np.stack([x for x, _ in pool_results], axis = -1)
+            model_errors = np.array([y for _, y in pool_results])
+            if np.any(model_errors != 0):
+                  pool.close()
+                  warnings.warn('Model integration failed at time T = {}. Terminating Experiment'.format(t))
+                  expt.modExpt({'status': 'run model error'})
+                  return expt.getParam('status')
+
 
             #No multiprocessing: Uncomment below for no multiprocessing
             #for n in range(Ne):
             #      tmp = copy.deepcopy(xa[:, n])
-            #      xf[:, n] = MODELS.model(tmp, dt, tau, funcptr)
+            #      xf[:, n], model_error = MODELS.model(tmp, dt, tau, funcptr)
+            #      if model_error != 0:
+            #           expt.modExpt({'status': 'run model error'})
+            #           return expt.getParam('status')
 
       pool.close()
       # Save everything into a nice xarray format if SV calculations are on
