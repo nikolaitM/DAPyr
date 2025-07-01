@@ -887,6 +887,9 @@ def plotExpt(expt: Expt, T: int, ax = None, plotObs = False, plotEns = True, plo
       else:
             return ax
       
+
+#TODO Add plotting funcitonality for Rank Histogram
+
 def copyExpt(expt: Expt):
       """Create a deepcopy of an existing experiment
 
@@ -922,7 +925,7 @@ def runDA(expt: Expt, maxT : int = None):
             A string specifying the status of the run.
       '''
       # Basic Parameters
-      if expt.getParam('status') != 'init':
+      if expt.getParam('status') != 'init' and expt.getParam('status') != 'completed':
             raise ValueError('Experiment did not initialize successfully. Cannot run experiment further.')
       
       Ne, Nx, T, dt = expt.getBasicParams()

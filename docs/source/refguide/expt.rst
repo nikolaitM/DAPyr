@@ -37,8 +37,9 @@ Parameters in the *basicParams* attribute store information that define the basi
      - -1
      - Seed for random number generator. Set to -1 to turn off.
 
+
 obsParams
-^^^^^^^^^^^
+^^^^^^^^^^^^^^^
 
 The *obsParams* attribute stores all parameters relating to the observations to assimilation, from what measurement operator to use to prescribing observation error. Additionally, the *obsParam* attribute stores parameters relating to coniguring the data assimilation methods.
 
@@ -72,6 +73,7 @@ The *obsParams* attribute stores all parameters relating to the observations to 
    * - `roi`
      - 0.005
      - Localization radius of influence
+
 
 **Kalman Filter Parameters**
 
@@ -227,7 +229,5 @@ The *miscParams* attribute stores all parameters relating to experiment output, 
      - Flag to determine whether to store the analysis and forecast SV ensemble states. 0 is False, 1 is True
 
 
-Examples
-----------
 
 
