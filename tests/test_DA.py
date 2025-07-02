@@ -6,6 +6,7 @@ import pytest
 import copy
 import DAPyr.MISC
 import DAPyr.Exceptions
+import DAPyr.OBS_ERRORS
 
 class TestDA(unittest.TestCase):
 
@@ -113,14 +114,17 @@ class TestDA(unittest.TestCase):
             e_flag = 0
             qcpass = np.zeros((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
-            var_y = 1
+            # var_y = 1
+            prescribed_obs_err = 0
+            prescribed_obs_error_params = {'mu': 0, 'sigma': 1}
+            L = OBS_ERRORS.get_likelihood(prescribed_obs_error, prescribed_obs_error_params)
             N_eff = 0.4
             kddm_flag = 0
             maxiter = 1
             alpha = 0.3
             min_res = 0.0
-            xa, e_flag = dap.DA.lpf_update(xf, xf, Y[:, None], var_y, H, C, N_eff*Ne, alpha, 
-                               min_res, maxiter, kddm_flag, e_flag, qcpass)
+            xa, e_flag = dap.DA.lpf_update(xf, xf, Y[:, None], H, C, N_eff*Ne, alpha, 
+                                           min_res, maxiter, kddm_flag, e_flag, qcpass, L)
             self.assertTrue(np.allclose(xa_true, xa))
       @pytest.mark.filterwarnings("ignore:No observations")
       def test_LPF_qaqc(self):
