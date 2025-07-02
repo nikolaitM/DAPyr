@@ -117,7 +117,7 @@ class TestDA(unittest.TestCase):
             # var_y = 1
             prescribed_obs_err = 0
             prescribed_obs_error_params = {'mu': 0, 'sigma': 1}
-            L = OBS_ERRORS.get_likelihood(prescribed_obs_error, prescribed_obs_error_params)
+            L = dap.OBS_ERRORS.get_likelihood(prescribed_obs_error, prescribed_obs_error_params)
             N_eff = 0.4
             kddm_flag = 0
             maxiter = 1
