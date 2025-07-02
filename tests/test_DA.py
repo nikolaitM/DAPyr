@@ -115,7 +115,7 @@ class TestDA(unittest.TestCase):
             qcpass = np.zeros((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
             # var_y = 1
-            prescribed_obs_err = 0
+            prescribed_obs_error = 0
             prescribed_obs_error_params = {'mu': 0, 'sigma': 1}
             L = dap.OBS_ERRORS.get_likelihood(prescribed_obs_error, prescribed_obs_error_params)
             N_eff = 0.4
