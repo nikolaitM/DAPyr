@@ -27,8 +27,7 @@ jobs:
           python -m build
           twine check --strict dist/*
   publish-to-pypi:
-    name: >-
-      Publish distribution to PyPI
+    name: Publish distribution to PyPI
     needs:
     - build
     runs-on: ubuntu-latest

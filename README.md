@@ -4,7 +4,7 @@ DAPyr (pronounced "dapper") is a Python package for running, testing, and experi
 
 For a in-depth tutorials and explanations, see the [documentation](https://dapyr.readthedocs.io/en/latest/).
 
-DAPyr currently supports the following functions:
+DAPyr currently supports the following:
 
 ### Models:
 1. Lorenz 1963
@@ -13,7 +13,7 @@ DAPyr currently supports the following functions:
 
 ### Data Assimilation Methods:
 1. Ensemble Square Root Filter [(Whitake and Hamill, 2002)](https://journals.ametsoc.org/view/journals/mwre/130/7/1520-0493_2002_130_1913_edawpo_2.0.co_2.xml)
-2. Localized Particle Filter [(Poterjoy et al., 2022)](https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.4328)
+2. Localized Particle Filter [(Poterjoy, 2022)](https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.4328)
 
 ### Measurement Operators:
 1. Linear
@@ -54,3 +54,18 @@ expt2 = dap.loadExpt('./Basic_L63.expt')
 ```
 
 For more examples, see `tutorial.ipynb` in `src`.
+
+## Citation 
+Please cite this repository [![DOI](https://zenodo.org/badge/967644537.svg)](https://doi.org/10.5281/zenodo.15792171) if you use DAPyr in your research publications or presentations.
+
+## Contributions
+
+Many thanks to the following for their contributions to DAPyr:
+- Henry Santer (LPF Python implementation and many, many bug discoveries)
+- Raelynn Wonacott (For advice on speeding up model integration using numba)
+
+## Acknowledgement
+
+The development of this software is supported by the following funding sources:
+- NSF CAREER Award #1848363
+
