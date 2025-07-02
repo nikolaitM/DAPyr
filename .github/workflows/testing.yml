@@ -1,0 +1,35 @@
+name: DAPyr Tests
+
+on: 
+ push:
+  branches: 
+    - main
+ pull_request:
+  branches:
+    - main
+
+jobs:
+  Test:
+    name: Test Commit
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        persist-credentials: false
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.x"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    - name: Test with pytest
+      run: |
+        pip install pytest pytest-cov
+        coverage run -m pytest -v -s
+    - name: Create Coverage Report
+      run: |
+        coverage report -m

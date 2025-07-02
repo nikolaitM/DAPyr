@@ -1,7 +1,7 @@
 import sys
 sys.path.insert(0,'../src/')
 import unittest
-import DAPpyr as dap
+import DAPyr as dap
 from unittest.mock import patch
 import numpy as np
 import copy

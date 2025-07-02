@@ -1,7 +1,7 @@
 import numpy as np
 from scipy.special import erf
 from scipy.interpolate import interp1d
-
+import warnings
 
 def calc_SV(xa, xf):
       Nx, Ne = xa.shape
@@ -87,19 +87,23 @@ def find_beta(sum_exp, Neff):
     return beta
 
 
+
 def get_reg(Nx, Ne, C, hw, Neff, res, beta_max):
     beta = np.zeros((Nx, ))
     res_ind = np.where(res > 0.0)[0]
     beta[res <= 0.0] = beta_max
+    Ny, Ne = hw.shape
     #hw is Ny x Ne
     for i in res_ind:
         wo = 0
-        dum = (Ne*hw - 1)*C[:, i, None]
-        #ind  = np.where(np.abs(dum) > 0.1)
-        #dum[ind] = np.log(dum[ind] + 1 + 1E-10) #Avoid -inf because of np.log([0.0])
-        dum = np.log(dum + 1)
-        wo = wo - np.sum(dum, axis = 0)
-        wo = wo - np.min(wo)
+        loc_one = np.where(C[:, i] == 1)[0]
+        loc_not_one = np.where(C[:, i] != 1)[0]
+        dum = np.empty_like(hw)
+        dum[loc_one, :] = np.log(Ne*hw[loc_one, :]) 
+        dum[loc_not_one, :] = np.log((Ne*hw[loc_not_one, :] - 1)*C[loc_not_one, i, None] + 1)
+        for y in range(Ny):
+            wo = wo - dum[y, :]
+            wo = wo - np.min(wo)
         beta[i] = find_beta(wo, Neff)
         if res[i] < 1/beta[i]:
             beta[i] = 1/res[i]
@@ -110,151 +114,6 @@ def get_reg(Nx, Ne, C, hw, Neff, res, beta_max):
         beta[i] = np.min([beta[i], beta_max])
     return beta, res
 
-
-    #Loop through each state variable
-    #If the residual has been reachs, set beta as just beta_max
-
-
-'''def find_beta(sum_exp, Neff):
-    \'\'\' perform bisection method search for the tempering coefficient beta
-    that yields a sufficiently large effective ensemble size\'\'\'
-    Ne = len(sum_exp)
-    beta_max = max(1, 20 * max(sum_exp))
-    
-    w = np.exp(-sum_exp)
-    ws = np.sum(w)
-    
-    if ws > 0:
-        w /= ws
-        Neff_init = 1 / np.sum(w ** 2)
-    else:
-        Neff_init = 1
-    
-    if Neff == 1:
-        return 1
-    
-    if Neff_init < Neff or ws == 0:
-        ks, ke = 1, beta_max
-        tol = 1e-3
-        
-        for _ in range(1000):
-            w = np.exp(-sum_exp / ks)
-            w /= np.sum(w)
-            fks = Neff - 1 / np.sum(w ** 2)
-            if np.isnan(fks):
-                fks = Neff - 1
-            
-            w = np.exp(-sum_exp / ke)
-            w /= np.sum(w)
-            fke = Neff - 1 / np.sum(w ** 2)
-            
-            km = (ke + ks) / 2
-            w = np.exp(-sum_exp / km)
-            w /= np.sum(w)
-            fkm = Neff - 1 / np.sum(w ** 2)
-            if np.isnan(fkm):
-                fkm = Neff - 1
-            
-            if abs(ke - ks) < tol:
-                break
-            
-            if fkm * fks > 0:
-                ks = km
-            else:
-                ke = km
-        
-        beta = km
-        w = np.exp(-sum_exp / beta)
-        w /= np.sum(w)
-        Nf = 1 / np.sum(w ** 2)
-        
-        if Nf <= Neff - 1 or np.isnan(Nf):
-            print(f'WARNING! Neff is {Nf} but target is {Neff}')
-            beta = beta_max
-        
-    else:
-        beta = 1
-    
-    return beta
-
-'''
-
-'''def sampling(x, w, Ne):
-    ind = np.zeros((Ne,))
-    b = np.argsort(x)
-    a = x[b]
-    cum_weight = np.zeros((w.shape[0] + 1,))
-    cum_weight[1:] = np.cumsum(w[b])
-    offset = 0.0
-    base = 1/(Ne - offset)/2
-
-    k = 1
-    for n in range(Ne):
-        frac = base + (n)/(Ne - offset)
-
-        flag = 0
-        while flag==0:
-            if (cum_weight[k-1] < frac) and (frac <= cum_weight[k]):
-                ind[n] = k-1
-                flag = 1
-            else:
-                k = k+1
-    ind = ind.astype(np.int64)
-    ind = b[ind]
-    ind2 = ind*0
-    for n in range(Ne):
-        if sum(ind == n) != 0:
-            ind2[n] = n
-            dum = np.where(ind == n)[0]
-            ind[dum[0]] = []
-    
-    ind0 = np.where(ind2 == 0)[0]
-    ind2[ind0] = ind
-    ind = ind2
-    return ind
-'''
-
-'''def get_reg(Nx, Ny, Ne, C, hw, Neff, res, beta_max):
-    # find next regularization coefficient for the current
-    # tempering step; uses precomputed particle weights
-    # and bisection method on beta (see above) to do so,
-    # then reduces the residual term appropriately so we know
-    # how much of the factored likelihood we have left to assimilate.
-    beta = np.zeros(Nx)
-
-    # print((Ne * hw[0, :] - 1) * C[0, 0])
-    # print(np.log((Ne * hw[0, :] - 1) * C[0, 0] + 1))
-
-    for j in range(Nx):
-        if res[j] <= 0:
-            beta[j] = beta_max
-            continue
-        
-        wo = 0.0
-        for i in range(Ny):
-            dum = np.log((Ne * hw[i, :] - 1) * C[i, j] + 1)
-            wo -= dum
-            wo -= np.min(wo)
-
-        # return
-
-        
-        beta[j] = find_beta(wo, Neff)
-        
-        
-        if res[j] < 1 / beta[j]:
-            beta[j] = 1 / res[j]
-            res[j] = 0
-        else:
-            res[j] -= 1 / beta[j]
-        
-        beta[j] = min(beta[j], beta_max)
-    
-    
-    # print(beta)
-    return beta, res
-
-'''
 
 # glue prior and resampled particles together given posterior moments
 # that we're seeking to match and a localization length scale
@@ -297,10 +156,11 @@ def sampling(x, w, Ne):
     return ind
 
 
-
 def gaussian_L(x, y, r):
     return np.exp(-(y - x)**2 / (2 * r)).item()
 
+
+#TODO Rewrite to not have to rely on scipy
 def kddm(x, xo, w):
     Ne = len(w)
     sig = (max(x) - min(x)) / 6
@@ -321,9 +181,9 @@ def kddm(x, xo, w):
     xa = interp_func(qf)
     
     if np.var(xa) < 1e-8:
-        print("Warning: Low variance detected in xa")
+        warnings.warn("Low variance detected in xa")
     
     if np.isnan(qf).any():
-        print("Warning: NaN values detected in qf")
+        warnings.warn("NaN values detected in qf")
     
     return xa
