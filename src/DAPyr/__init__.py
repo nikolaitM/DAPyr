@@ -265,7 +265,6 @@ class Expt:
             self.basicParams['seed'] = -1
       def _initObs(self):
             self.obsParams['h_flag'] = 0 #Linear Operator
-            self.obsParams['sig_y'] = 1   #Observation error standard deviation
             self.obsParams['tau'] = 1     #Model steps between observations
             self.obsParams['obf'] = 1   #Observation spatial frequency: spacing between variables
             self.obsParams['obb'] = 0   #Observation buffer: number of variables to skip when generating obs
@@ -290,6 +289,9 @@ class Expt:
             self.obsParams['used_obs_err_params'] = default_gaussian_params
             self.obsParams['prescribed_obs_err'] = 0
             self.obsParams['prescribed_obs_err_params'] = default_gaussian_params
+
+            #Parameters related to observation quality control
+            self.obsParams['qc_flag'] = 0
       def _initModel(self):
             self.modelParams['model_flag'] = 0
             #Store the default parameters for all the possible models here
@@ -956,7 +958,6 @@ def runDA(expt: Expt, maxT : int = None):
 
       numPool = expt.getParam('numPool')
       #Observation Parameters
-      var_y = expt.getParam('sig_y')**2
       H = expt.getParam('H')
       Ny = expt.getParam('Ny')
       tau = expt.getParam('tau')
@@ -973,6 +974,7 @@ def runDA(expt: Expt, maxT : int = None):
 
       #Flags
       h_flag, expt_flag= expt.getParam('h_flag'), expt.getParam('expt_flag')
+      qc_flag = expt.getParam('qc_flag')
 
       #Model Parameters
       params, funcptr = expt.getParam('model_params'), expt.getParam('funcptr')
@@ -993,6 +995,22 @@ def runDA(expt: Expt, maxT : int = None):
             x_ensmean = expt.x_ensmean
       if saveForecastEns:
             x_fore_ens = expt.x_fore_ens
+
+      # check if an observation error standard deviation was prescribed
+      # this is necessary either if we are using a Kalman Filter variant
+      # or if we are performing basic quality control on obs.
+      if expt_flag == 0:
+            if 'sigma' in prescribed_obs_err_params:
+                  var_y = prescribed_obs_err_params['sigma']
+            else:
+                  raise KeyError(f'EnSRF Selected but no observation error standard deviation provided in prescribed_obs_err_params: {prescribed_obs_err_params}')
+
+      if qc_flag == 1:
+            if 'sigma' in prescribed_obs_err_params:
+                  var_y = prescribed_obs_err_params['sigma']
+            else:
+                  raise KeyError(f'Obs QAQC turned on but no observation error standard deviation provided in prescribed_obs_err_params: {prescribed_obs_err_params}')
+            
 
       #Open pool      
       #TODO Add exception handling in case function fails, 
@@ -1053,11 +1071,14 @@ def runDA(expt: Expt, maxT : int = None):
 
             hxm = np.mean(hx, axis = -1)[:, None]
             qaqcpass = np.zeros((Ny,))
+
             #qaqc pass
-            for i in range(Ny):
-                  d = np.abs((Y[i, t, :] - hxm[i, :])[0])
-                  if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
-                        qaqcpass[i] = 1
+            if qc_flag:
+
+                  for i in range(Ny):
+                        d = np.abs((Y[i, t, :] - hxm[i, :])[0])
+                        if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
+                              qaqcpass[i] = 1
             #Data Assimilation
             #CHECK Make DA update steps return the ensemble mean, make LPF return xmpf specifically
             match expt_flag:
