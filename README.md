@@ -6,6 +6,8 @@ For a in-depth tutorials and explanations, see the [documentation](https://dapyr
 
 DAPyr currently supports the following:
 
+secret readme edit
+
 ### Models:
 1. Lorenz 1963
 2. Lorenz 1996
