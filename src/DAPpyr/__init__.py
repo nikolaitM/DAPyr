@@ -189,7 +189,7 @@ class Expt:
             self.obsParams['obf'] = 1   #Observation spatial frequency: spacing between variables
             self.obsParams['obb'] = 0   #Observation buffer: number of variables to skip when generating obs
             self.obsParams['ybias'] = 0   #Observation bias applied to all obs
-            self.obsParams['var_y'] = self.obsParams['sig_y']**2
+            self.obsParams['var_y'] = 0.25 #self.obsParams['sig_y']**2
             #Localization
             self.obsParams['localize'] = 1
             #EnKF Parameters

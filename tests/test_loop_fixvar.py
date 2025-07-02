@@ -12,10 +12,10 @@ import psutil
 import os
 import gc
 
-obs_freq = [1]
+obs_freq = [16]
 mod_bias = [-0.5,-0.25,0,0.25,0.5]
-roi_kf = [0.1,0.3,0.5,0.7,0.9] #Check localization flag
-gamma = [0.1,0.3,0.5,0.7,0.9]
+roi_kf = [0.005,0.01,0.05,0.1,0.3,0.5,0.7,0.9] #Check localization flag
+gamma = [0.3,0.5,0.7,0.9]
 ens_n = [350]
 
 for f in obs_freq:
@@ -23,7 +23,7 @@ for f in obs_freq:
         for kf in roi_kf:
             for gam in gamma:
                 for nens in ens_n:
-                    expt_name = f"test_std{f:g}_modbias{x:+.2f}_roikf{kf:g}_gam{gam:g}"
+                    expt_name = f"test_std{f:g}_modbias{x:+.1f}_roikf{kf:g}_gam{gam:g}"
                     #expt_name = f"test_std{f:g}_nens{nens:g}"
                     print(expt_name)
                     expt  = dap.Expt(expt_name, {'expt_flag': 0, # EnSRF
@@ -41,16 +41,16 @@ for f in obs_freq:
                                                 'output_dir': '/Users/knisely/pyDA_data/'
                                                 })
 
-                    process = psutil.Process(os.getpid())
-                    memory_before = process.memory_info().rss / 1024 / 1024  # MB
-                    print(f"Memory before {expt_name}: {memory_before:.1f} MB")
+                    #process = psutil.Process(os.getpid())
+                    #memory_before = process.memory_info().rss / 1024 / 1024  # MB
+                    #print(f"Memory before {expt_name}: {memory_before:.1f} MB")
                     
                     #print(expt)
                     dap.runDA(expt)
                     expt.saveExpt()
 
-                    memory_after = process.memory_info().rss / 1024 / 1024  # MB
-                    print(f"Memory after {expt_name}: {memory_after:.1f} MB")
+                    #memory_after = process.memory_info().rss / 1024 / 1024  # MB
+                    #print(f"Memory after {expt_name}: {memory_after:.1f} MB")
 
                     plt.plot(expt.rmse)
                     plt.title('Posterior RMSE for Experiment\n{}'.format(expt.exptname))
