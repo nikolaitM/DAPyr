@@ -101,7 +101,7 @@ class Expt:
             return equality
 
 
-      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, ybias, h_flag, H):
+      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, numPool, sig_y, ybias, h_flag, H):
             #Initial Ensemble
             #Spin Up
             seed = self.getParam('seed')
@@ -154,7 +154,7 @@ class Expt:
                   case 1:
                         Y = np.matmul(H, (xt**2 + dum))[:, :, np.newaxis]
                   case 2:
-                        Y = np.matmul(H, np.log(np.abs(xt + dum)))[:, :, np.newaxis]
+                        Y = np.matmul(H, np.log(np.abs(xt)) + dum)[:, :, np.newaxis]
             Y = Y + ybias           #Knisely 
 
             return xf_0, xt, Y
@@ -219,7 +219,7 @@ class Expt:
             h_flag = self.getParam('h_flag')
             H = self.getParam("H")
             #Do model spinup
-            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('NumPool'), self.getParam('sig_y'), self.getParam('ybias'), h_flag, H)
+            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('numPool'), self.getParam('sig_y'), self.getParam('ybias'), h_flag, H)
 
             self.states['xf_0'] = xf_0
             self.states['xt'] = xt
@@ -285,7 +285,7 @@ class Expt:
                       'l05_F':15, 'l05_Fe':15,
                       'l05_K':32, 'l05_I':12, 
                       'l05_b':10.0, 'l05_c':2.5}
-            self.modelParams['params'] = params
+            self.modelParams['model_params'] = params
             self.modelParams['xbias'] = 0
 
       def _initMisc(self):

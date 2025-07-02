@@ -5,8 +5,8 @@ import DAPyr as dap
 from unittest.mock import patch
 import numpy as np
 import copy
-import DAPpyr.MISC
-import DAPpyr.Exceptions
+import DAPyr.MISC
+import DAPyr.Exceptions
 import matplotlib.pyplot as plt
 import gc
 
@@ -33,7 +33,7 @@ for f in obs_freq:
                                         'gamma': gamma[i],  # RTPS parameter
                                         'xbias': x,
                                         'ybias': y,
-                                        'NumPool': 40,
+                                        'numPool': 40,
                                         'output_dir': '/Users/knisely/pyDA_data/'
                                         })
 
