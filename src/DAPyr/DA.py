@@ -189,7 +189,6 @@ def lpf_update(x : np.ndarray, hx : np.ndarray,
         lomega_y = np.zeros_like(omega_y)
 
         wo = L(Y, hxo) + 1E-40
-
         wo = wo/np.sum(wo, axis = -1)[:, None]
 
         if np.any(np.isnan(wo)):

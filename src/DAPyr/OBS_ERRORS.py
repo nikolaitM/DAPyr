@@ -59,6 +59,7 @@ def get_likelihood(prescribed_obs_error, params):
 
     def gaussian_l(y, hx, mu, sigma):
         d = (y - hx - mu) ** 2 / (2 * sigma**2)
+        d -= np.min(d, axis=-1)[:,None]
         return np.exp(-d)
 
     def state_dep_gaussian_l(y, hx, mu1, mu2, sigma1, sigma2, threshold):
