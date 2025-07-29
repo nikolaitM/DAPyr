@@ -33,7 +33,7 @@ for f in obs_freq:
                                                 'obf': f,
                                                 'T': 200,
                                                 'localize': 1,  # Turns localization on/off
-                                                'roi_kf': kf,  # Localization radius
+                                                'roi': kf,  # Localization radius
                                                 'gamma': gam,  # RTPS parameter
                                                 'xbias': x,
                                                 'ybias': 0,

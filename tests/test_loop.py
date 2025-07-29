@@ -10,17 +10,24 @@ import DAPyr.Exceptions
 import matplotlib.pyplot as plt
 import gc
 
-obs_freq = [2,8,16]
+'''obs_freq = [2,8,16]
 obs_bias = [-2.0,-1.0,0.0,1.0,2.0]
 
 mod_bias = [-0.5,-0.25,0.0,0.25,0.5]
 roi_kf = [0.005,0.005,0.3,0.005,0.005]
-gamma = [0.9,0.9,0.3,0.9,0.9]
+gamma = [0.9,0.9,0.3,0.9,0.9]'''
+
+obs_freq = [2]
+obs_bias = [-2.0,2.0]
+
+mod_bias = [-0.5,0.5]
+roi_kf = [0.005,0.005]
+gamma = [0.9,0.9]
 
 for f in obs_freq:
     for i, x in enumerate(mod_bias):
         for y in obs_bias:
-            expt_name = f"test_std{f:g}_modbias{x:+.2f}_obsbias{y:+.1f}"
+            expt_name = f"test_std{f:g}_anch8_modbias{x:+.2f}_obsbias{y:+.1f}_online_v2"
             print(expt_name)
             expt  = dap.Expt(expt_name, {'expt_flag': 0, # EnSRF
                                         "Ne": 350, 
@@ -29,12 +36,14 @@ for f in obs_freq:
                                         'obf': f,
                                         'T': 500,
                                         'localize': 1,  # Turns localization on/off
-                                        'roi_kf': roi_kf[i],  # Localization radius
+                                        'roi': roi_kf[i],  # Localization radius
                                         'gamma': gamma[i],  # RTPS parameter
                                         'xbias': x,
                                         'ybias': y,
                                         'numPool': 40,
-                                        'output_dir': '/Users/knisely/pyDA_data/'
+                                        'output_dir': '/Users/knisely/pyDA_data/',
+                                        'onlineBC': 1,
+                                        'anch_freq': 8
                                         })
 
             #process = psutil.Process(os.getpid())

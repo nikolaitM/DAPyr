@@ -101,7 +101,7 @@ class Expt:
             return equality
 
 
-      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, numPool, sig_y, ybias, h_flag, H):
+      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, numPool, sig_y, ybias, h_flag, H, onlineBC, anch_freq, H_anch):
             #Initial Ensemble
             #Spin Up
             seed = self.getParam('seed')
@@ -155,9 +155,23 @@ class Expt:
                         Y = np.matmul(H, (xt**2 + dum))[:, :, np.newaxis]
                   case 2:
                         Y = np.matmul(H, np.log(np.abs(xt)) + dum)[:, :, np.newaxis]
+            Y_orig = copy.deepcopy(Y)
             Y = Y + ybias           #Knisely 
+            
+            # onlineBC is True, we make Y_anch. Otherwise, we set to 0
+            if onlineBC:
+                  dum = rng.randn(T, Nx).T*0.1 # Anchor ob sig_y is hard-coded to 0.1, for now
+                  match h_flag:
+                        case 0:
+                              Y_anch = np.matmul(H_anch,(xt + dum))[:, :, np.newaxis]
+                        case 1:
+                              Y_anch = np.matmul(H_anch, (xt**2 + dum))[:, :, np.newaxis]
+                        case 2:
+                              Y_anch = np.matmul(H_anch, np.log(np.abs(xt)) + dum)[:, :, np.newaxis]
+            else:
+                  Y_anch = 0
 
-            return xf_0, xt, Y
+            return xf_0, xt, Y, Y_anch
 
       def _configModel(self):
             model_flag = self.getParam('model_flag')
@@ -180,6 +194,7 @@ class Expt:
             H = H[self.obsParams['obb']:Nx-self.obsParams['obb']:self.obsParams['obf'], :]
             self.obsParams['H'] = H
             self.obsParams['Ny'] = len(H)
+
             #Create localization matrices
             if self.obsParams['localize']==1:
                   C = MISC.create_periodic(self.obsParams['roi'], Nx, 1/Nx)
@@ -192,6 +207,14 @@ class Expt:
             self.obsParams['C'] = np.matmul(H, C)
             #self.obsParams['C_kf'] = np.matmul(H, C_kf)
             #self.obsParams['C_pf'] = np.matmul(H, C_pf)
+
+            # Knisely
+            onlineBC = self.miscParams['onlineBC']
+            if onlineBC:
+                  H_anch = np.eye(Nx) #Linear Measurement Operator
+                  H_anch = H[self.obsParams['obb']:Nx-self.obsParams['obb']:self.miscParams['anch_freq'], :]
+                  self.obsParams['H_anch'] = H_anch
+                  self.obsParams['C_anch'] = np.matmul(H_anch, C)
 
       def _clearAttributes(self):
             needed_attrs = ['exptname', 'modelParams', 'obsParams', 'basicParams', 'miscParams', 'states']
@@ -218,12 +241,19 @@ class Expt:
             Nx = self.getParam('Nx')
             h_flag = self.getParam('h_flag')
             H = self.getParam("H")
-            #Do model spinup
-            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('numPool'), self.getParam('sig_y'), self.getParam('ybias'), h_flag, H)
+
+            onlineBC = self.miscParams['onlineBC']
+            if onlineBC:
+                  anch_freq = self.miscParams['anch_freq']
+                  H_anch = self.obsParams['H_anch']
+
+            #Do model spinup # Knisely
+            xf_0, xt, Y, Y_anch = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('numPool'), self.getParam('sig_y'), self.getParam('ybias'), h_flag, H, onlineBC, anch_freq, H_anch)
 
             self.states['xf_0'] = xf_0
             self.states['xt'] = xt
             self.states['Y'] = Y
+            self.states['Y_anch'] = Y_anch
 
             #Initialize Variables for storage
 
@@ -234,9 +264,11 @@ class Expt:
             if self.getParam('saveEnsMean') != 0:
                   self.x_ensmean = np.zeros((Nx, T))*np.nan
                   self.xf_ensmean = np.zeros((Nx, T))*np.nan
-            if self.getParam('offlineBC') != 0 or self.getParam('onlineBC') != 0:
+            if self.getParam('offlineBC') != 0:
                   self.AmB = np.zeros((Y.shape[0],))*np.nan
                   self.OmB_interp = np.zeros((Y.shape[0],))*np.nan
+            if self.getParam('onlineBC') != 0:
+                  self.x_anch_ensmean = np.zeros((Nx, T))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
             self.rmse_prior = np.zeros((T,))
             self.spread = np.zeros((T,2)) #Spread of Expt Prio/Posterior
@@ -309,7 +341,8 @@ class Expt:
             #Parameters for model-aware obs bias correction
             self.miscParams['offlineBC'] = 0 #0 for false, 1 for true
             self.miscParams['BCpath'] = '' #Path to .expt file with analysis increments/innovation statistics
-            self.miscParams['onlineBC'] = 0 #Doesn't do anything at the moment
+            self.miscParams['onlineBC'] = 0 #0 for false, 1 for true
+            self.miscParams['anch_freq'] = 1 #Frequency for anchor obs in preliminary DA update
 
       def resetParams(self):
             '''Reset all Expt parameters to their default values.'''
@@ -443,7 +476,11 @@ class Expt:
             ------------------------
             Bias Correction (WIP Knisely)
             ------------------------
-            offlineBC: {self.getParam('offlineBC')} # Determines whether offline model-aware bias correction is performed
+            onlineBC: {self.getParam('onlineBC')} # Determines whether ONLINE model-aware bias correction is performed
+                  0: Off (Default)
+                  1: On
+            anch_freq: {self.getParam('anch_freq')} # If onlineBC is On, this determines frequency of anchor obs for preliminary DA update
+            offlineBC: {self.getParam('offlineBC')} # Determines whether OFFLINE model-aware bias correction is performed (THIS DOES NOT WORK)
                   0: Off (Default)
                   1: On
             BCpath: {self.getParam('BCpath')} # Path to .expt file with analysis increments/innovation statistics              
@@ -988,6 +1025,7 @@ def runDA(expt: Expt, maxT : int = None):
       saveForecastEns = expt.getParam('saveForecastEns')
       offlineBC = expt.getParam('offlineBC')
       onlineBC = expt.getParam('onlineBC')
+      anch_freq = expt.getParam('anch_freq')
 
       e_flag = expt.getParam('error_flag')
 
@@ -1003,9 +1041,11 @@ def runDA(expt: Expt, maxT : int = None):
             xf_ensmean = expt.xf_ensmean
       if saveForecastEns:
             x_fore_ens = expt.x_fore_ens
-      if offlineBC or onlineBC:
+      if offlineBC:
             AmB = expt.AmB
             OmB_interp = expt.OmB_interp
+      if onlineBC:
+            x_anch_ensmean = expt.x_anch_ensmean
 
       #Open pool      
       #TODO Add exception handling in case function fails, 
@@ -1049,7 +1089,13 @@ def runDA(expt: Expt, maxT : int = None):
       #Linear bias correction stuff # Knisely
       offlineBC = expt.getParam('offlineBC')
       onlineBC = expt.getParam('onlineBC')
+      if onlineBC:
+            H_anch = expt.getParam('H_anch')
+            C_anch = expt.getParam('C_anch')
+            Y_anch = expt.getParam('Y_anch')
+
       if offlineBC:
+            # Note: offline BC does not work and I do not intend to fix it any time soon. My primary concern is online BC.
             #Retrieve variables from previous run
             BCpath = expt.getParam('BCpath')
             BCexpt = loadExpt(BCpath)
@@ -1059,15 +1105,15 @@ def runDA(expt: Expt, maxT : int = None):
             BC_H = BCexpt.obsParams['H']
             
             #Get time-average OmB and AmB
-            BC_spinup = 100 #Hardcoded for now
+            BC_spinup = 100 #Hardcoded for now, and probably forever
             BC_x_mean = np.mean(BC_x[:,BC_spinup:],axis=1)
             BC_xf_mean = np.mean(BC_xf[:,BC_spinup:],axis=1)
             BC_obs_mean = np.mean(BC_obs[:,BC_spinup:],axis=1)
-            AmB = np.matmul(H,(BC_x_mean - BC_xf_mean))
+            AmB = np.matmul(BC_H,(BC_x_mean - BC_xf_mean))
             OmB = BC_obs_mean - np.matmul(BC_H,BC_xf_mean)
 
             #Copy y and then apply model-aware linear bias correction
-            Y_orig = copy.deepcopy(Y)
+            #Y_orig = copy.deepcopy(Y)    We do this earlier
             #OmB needs to be same length as Y
             if OmB.shape[0] != Y.shape[0]:
                   orig_coords = np.arange(OmB.shape[0])
@@ -1094,23 +1140,79 @@ def runDA(expt: Expt, maxT : int = None):
                         hx = np.matmul(H, np.square(xf))
                   case 2:
                         hx = np.matmul(H, np.log(np.abs(xf)))
-
             hxm = np.mean(hx, axis = -1)[:, None]
+            
             qaqcpass = np.zeros((Ny,))           # Knisely, turn off QC pass
             #qaqc pass
             #for i in range(Ny):
             #      d = np.abs((Y[i, t, :] - hxm[i, :])[0])
             #      if d > 4 * np.sqrt(np.var(hx[i, :]) + var_y):
             #            qaqcpass[i] = 1
+            
             #Data Assimilation
             #CHECK Make DA update steps return the ensemble mean, make LPF return xmpf specifically
-            match expt_flag:
-                  case 0: #Deterministic EnKF
-                        xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, Y[:, t], C, HC, var_y, gamma, e_flag, qaqcpass)
-                  case 1: #LPF
-                        xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
-                  case 2: # Nothing
-                        xa = xf
+
+            # If onlineBC is True, then we do a two-step process. First we assimilate anchor obs only. Then we perform a separate update with all obs.
+            # After warm-up period, we take time average of O-A1 where A1 is analysis from anchor-only DA cycle, and then subtract it from Y[current cycle]
+            if onlineBC:
+                  #print(np.shape(Y))
+                  match h_flag:
+                        case 0:
+                              hx_anch = np.matmul(H_anch, xf)
+                        case 1:
+                              hx_anch = np.matmul(H_anch, np.square(xf))
+                        case 2:
+                              hx_anch = np.matmul(H_anch, np.log(np.abs(xf)))
+                  
+                  hxm_anch = np.mean(hx_anch, axis = -1)[:, None]
+                  HC_anch =  np.matmul(C_anch,H_anch.T)
+
+                  match expt_flag:
+                        case 0: #Deterministic EnKF
+                              xa_anch, e_flag = DA.EnSRF_update(xf, hx_anch, xm ,hxm_anch, Y_anch[:, t], C_anch, HC_anch, 0.01, gamma, e_flag, qaqcpass)   # var_y fixed to 0.1**2
+                        case _:
+                              print("Online BC only works with EnSRF, for now")
+                              e_flag += 1
+                  x_anch_ensmean[:, t] = np.mean(xa_anch, axis = -1)
+
+                  BC_win = 100       # BC window hard coded to 100
+                  if t > BC_win+100:    # BC spin-up hard coded to 100
+                        BC_x_mean = np.mean(x_anch_ensmean[:,t-BC_win:t+1],axis=1)
+                        BC_xf_mean = np.mean(xf[:,t-BC_win:t+1],axis=1)
+                        AmB = np.matmul(H,(BC_x_mean - BC_xf_mean))
+
+                        BC_obs_mean = np.mean(Y[:,t-BC_win:t+1,:],axis=1).squeeze(-1)
+                        OmB = BC_obs_mean - np.matmul(H,BC_xf_mean)
+
+                        if OmB.shape[0] != Y.shape[0]:
+                              orig_coords = np.arange(OmB.shape[0])
+                              targ_coords = np.arange(Y.shape[0])
+                              OmB_interp = np.interp(targ_coords, orig_coords, OmB)
+                        else:
+                              OmB_interp = OmB
+                        y_bc = Y[:, t, 0]
+                        y_bc = y_bc - OmB_interp + AmB    # Fix this line, we only want to apply correction to hx
+                  else:
+                        y_bc = Y[:, t, 0]
+                  
+                  # v1 comments this out, v2 comment in
+                  #xf = xa_anch
+
+                  match expt_flag:
+                        case 0: #Deterministic EnKF
+                              xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, y_bc, C, HC, var_y, gamma, e_flag, qaqcpass)
+                        case 1: #LPF
+                              xa, e_flag = DA.lpf_update(xf, hx, y_bc, var_y, H, C, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
+                        case 2: # Nothing
+                              xa = xf
+            else:
+                  match expt_flag:
+                        case 0: #Deterministic EnKF
+                              xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, Y[:, t], C, HC, var_y, gamma, e_flag, qaqcpass)
+                        case 1: #LPF
+                              xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], var_y, H, C, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
+                        case 2: # Nothing
+                              xa = xf
 
             if e_flag != 0:
                   pool.close()
