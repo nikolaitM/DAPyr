@@ -213,7 +213,10 @@ class Expt:
             onlineBC = self.miscParams['onlineBC']
             if onlineBC:
                   H_anch = np.eye(Nx) #Linear Measurement Operator
-                  H_anch = H[self.obsParams['obb']:Nx-self.obsParams['obb']:self.miscParams['anch_freq'], :]
+                  print(np.shape(H))
+                  print(np.shape(self.obsParams['obb']))
+                  H_anch = H_anch[self.obsParams['obb']:Nx-self.obsParams['obb']:self.miscParams['anch_freq'], :]
+                  print(np.shape(H_anch))
                   self.obsParams['H_anch'] = H_anch
                   self.obsParams['C_anch'] = np.matmul(H_anch, C)
 
@@ -271,6 +274,7 @@ class Expt:
             if self.getParam('onlineBC') != 0:
                   self.x_anch_ensmean = np.zeros((Nx, T))*np.nan
             self.rmse = np.zeros((T,)) #RMSE of Expt
+            self.bias = np.zeros((T,)) #Bias of Expt
             self.rmse_prior = np.zeros((T,))
             self.spread = np.zeros((T,2)) #Spread of Expt Prio/Posterior
 
@@ -1007,12 +1011,12 @@ def runDA(expt: Expt, maxT : int = None):
       Ny = expt.getParam('Ny')
       tau = expt.getParam('tau')
       C = expt.getParam('C')
+      HC =  np.matmul(C,H.T)
       Nt_eff = expt.getParam('Nt_eff')
       mixing_gamma = expt.getParam('mixing_gamma')
       min_res = expt.getParam('min_res')
       kddm_flag = expt.getParam('kddm_flag')
       maxiter = expt.getParam('maxiter')
-      HC =  np.matmul(C,H.T)
       gamma = expt.getParam('gamma')
 
       #Flags
@@ -1026,12 +1030,12 @@ def runDA(expt: Expt, maxT : int = None):
       saveForecastEns = expt.getParam('saveForecastEns')
       offlineBC = expt.getParam('offlineBC')
       onlineBC = expt.getParam('onlineBC')
-      anch_freq = expt.getParam('anch_freq')
-
+      
       e_flag = expt.getParam('error_flag')
 
       #Stored Statistics
       rmse = expt.rmse
+      bias = expt.bias
       rmse_prior = expt.rmse_prior
       spread = expt.spread
 
@@ -1087,17 +1091,18 @@ def runDA(expt: Expt, maxT : int = None):
       xf_0, xt, Y = expt.getStates()
       xf = copy.deepcopy(xf_0)
 
-      #Linear bias correction stuff # Knisely
+      #Linear bias correction variable call # Knisely
       offlineBC = expt.getParam('offlineBC')
       onlineBC = expt.getParam('onlineBC')
       if onlineBC:
             H_anch = expt.getParam('H_anch')
             C_anch = expt.getParam('C_anch')
             Y_anch = expt.getParam('Y_anch')
+            HC_anch =  np.matmul(C_anch,H_anch.T)
+            anch_freq = expt.getParam('anch_freq')
 
       if offlineBC:
-            # Note: offline BC does not work and I do not intend to fix it any time soon. My primary concern is online BC.
-            #Retrieve variables from previous run
+            ''' Note: offline BC does not work and I do not intend to fix it any time soon. My primary concern is online BC.
             BCpath = expt.getParam('BCpath')
             BCexpt = loadExpt(BCpath)
             BC_x = BCexpt.x_ensmean
@@ -1105,7 +1110,6 @@ def runDA(expt: Expt, maxT : int = None):
             BC_obs = np.squeeze(BCexpt.states['Y'])
             BC_H = BCexpt.obsParams['H']
             
-            #Get time-average OmB and AmB
             BC_spinup = 100 #Hardcoded for now, and probably forever
             BC_x_mean = np.mean(BC_x[:,BC_spinup:],axis=1)
             BC_xf_mean = np.mean(BC_xf[:,BC_spinup:],axis=1)
@@ -1113,16 +1117,9 @@ def runDA(expt: Expt, maxT : int = None):
             AmB = np.matmul(BC_H,(BC_x_mean - BC_xf_mean))
             OmB = BC_obs_mean - np.matmul(BC_H,BC_xf_mean)
 
-            #Copy y and then apply model-aware linear bias correction
-            #Y_orig = copy.deepcopy(Y)    We do this earlier
-            #OmB needs to be same length as Y
-            if OmB.shape[0] != Y.shape[0]:
-                  orig_coords = np.arange(OmB.shape[0])
-                  targ_coords = np.arange(Y.shape[0])
-                  OmB_interp = np.interp(targ_coords, orig_coords, OmB)
-            else:
-                  OmB_interp = OmB
-            Y = Y - OmB_interp[:, np.newaxis, np.newaxis] + AmB[:, np.newaxis, np.newaxis]
+            Y = Y - OmB[:, np.newaxis, np.newaxis] + AmB[:, np.newaxis, np.newaxis]'''
+            print("offlineBC is nonfunctional")
+            e_flag += 1
 
       # Time Loop
       for t in range(T):
@@ -1155,21 +1152,20 @@ def runDA(expt: Expt, maxT : int = None):
             #Data Assimilation
             #CHECK Make DA update steps return the ensemble mean, make LPF return xmpf specifically
 
-            # If onlineBC is True, then we do a two-step process. First we assimilate anchor obs only. Then we perform a separate update with all obs.
-            # After warm-up period, we take time average of O-A1 where A1 is analysis from anchor-only DA cycle, and then subtract it from Y[current cycle]
+            # If onlineBC is True, then we do a two-step process. First we assimilate anchor obs only. After warm-up period, we perform a separate 
+            # update with all obs. We debias std obs with a time averaged O-A1 where A1 is the preliminary, and subtract it from Hx.
             if onlineBC:
-                  #print(np.shape(Y))
+                  # Forecast background into anchor ob-space
                   match h_flag:
                         case 0:
                               hx_anch = np.matmul(H_anch, xf)
                         case 1:
                               hx_anch = np.matmul(H_anch, np.square(xf))
                         case 2:
-                              hx_anch = np.matmul(H_anch, np.log(np.abs(xf)))
-                  
+                              hx_anch = np.matmul(H_anch, np.log(np.abs(xf)))                  
                   hxm_anch = np.mean(hx_anch, axis = -1)[:, None]
-                  HC_anch =  np.matmul(C_anch,H_anch.T)
-
+                  
+                  # Preliminary update with forecast background, anchor obs, background in anchor ob-space, and localization matrices in anchor ob-space
                   match expt_flag:
                         case 0: #Deterministic EnKF
                               xa_anch, e_flag = DA.EnSRF_update(xf, hx_anch, xm ,hxm_anch, Y_anch[:, t], C_anch, HC_anch, 0.01, gamma, e_flag, qaqcpass)   # var_y fixed to 0.1**2
@@ -1178,50 +1174,46 @@ def runDA(expt: Expt, maxT : int = None):
                               e_flag += 1
                   x_anch_ensmean[:, t] = np.mean(xa_anch, axis = -1)
 
-                  # tests 1,3,&5
-                  #xf_bc = xf
-                  
-                  # tests 2,4,&6
-                  xf_bc = xa_anch        
-                  xm = np.mean(xf_bc, axis = -1)[:, np.newaxis]
-                  match h_flag:
-                        case 0:
-                              hx = np.matmul(H, xf_bc)
-                        case 1:
-                              hx = np.matmul(H, np.square(xf_bc))
-                        case 2:
-                              hx = np.matmul(H, np.log(np.abs(xf_bc)))
-
+                  # After spin-up and window length, we calculate bias correction vectors. 
                   BC_win = 100       # BC window hard coded to 100
-                  if t > BC_win+100:    # BC spin-up hard coded to 100
+                  if t > BC_win+100:    # BC spin-up hard coded to 100                        
+                        # We estimate model bias from preliminary update analysis - forecast background.
+                        # We estimate obs bias from (std obs - background) - model bias est.
                         BC_x_mean = np.mean(x_anch_ensmean[:,t-BC_win:t],axis=1)
                         BC_xf_mean = np.mean(xf_ensmean[:,t-BC_win:t],axis=1)
+                        BC_obs_mean = np.mean(Y[:,t-BC_win:t,:],axis=1).squeeze(-1)
                         AmB = np.matmul(H,(BC_x_mean - BC_xf_mean))
 
-                        BC_obs_mean = np.mean(Y[:,t-BC_win:t,:],axis=1).squeeze(-1)
-                        OmB = BC_obs_mean - np.matmul(H,BC_xf_mean)
+                        # Do we take B to be forecast background? Or prelim. update analysis?
+                        #OmB = BC_obs_mean - np.matmul(H,BC_xf_mean)
+                        OmB = BC_obs_mean - np.matmul(H,BC_x_mean)
 
-#                        if OmB.shape[0] != Y.shape[0]:
-#                              orig_coords = np.arange(OmB.shape[0])
-#                              targ_coords = np.arange(Y.shape[0])
-#                              OmB_interp = np.interp(targ_coords, orig_coords, OmB)
-#                        else:
-                        OmB_interp = OmB
+                        # Prelim. analysis into std ob-space
+                        match h_flag:
+                              case 0:
+                                    hx = np.matmul(H, xa_anch)
+                              case 1:
+                                    hx = np.matmul(H, np.square(xa_anch))
+                              case 2:
+                                    hx = np.matmul(H, np.log(np.abs(xa_anch)))
 
-                        # tests 1-4
-                        hx = hx + OmB_interp[:, np.newaxis] - AmB[:, np.newaxis]
+                        # Bias correction of std obs-space prior
+                        hx = hx + OmB[:, np.newaxis] - AmB[:, np.newaxis]          
+
+                        # We take means after hx correction
+                        hxm = np.mean(hx, axis = -1)[:, None]     
+                        xm = np.mean(xa_anch, axis = -1)[:, np.newaxis]
                         
-                        # tests 5&6
-#                        Y[:, t, 0] = Y[:, t, 0] - OmB_interp + AmB
-                  
-                  hxm = np.mean(hx, axis = -1)[:, None]     # We do this after hx correction
-                  match expt_flag:
-                        case 0: #Deterministic EnKF
-                              xa, e_flag = DA.EnSRF_update(xf_bc, hx, xm ,hxm, Y[:, t], C, HC, var_y, gamma, e_flag, qaqcpass)
-                        case 1: #LPF
-                              xa, e_flag = DA.lpf_update(xf_bc, hx, Y[:, t], var_y, H, C, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass)
-                        case 2: # Nothing
-                              xa = xf_bc
+                        # We then perform secondary update where the background is the prelim. analysis. We use std obs, debiased ob-space background, and localization matrices in std ob-space
+                        match expt_flag:
+                              case 0: #Deterministic EnKF
+                                    xa, e_flag = DA.EnSRF_update(xa_anch, hx, xm ,hxm, Y[:, t], C, HC, var_y, gamma, e_flag, qaqcpass)
+                              case _:
+                                    print("Online BC only works with EnSRF, for now")
+                                    e_flag += 1
+                  else:
+                        # During spin-up/window length, we do not perform secondary update
+                        xa=xa_anch
             else:
                   match expt_flag:
                         case 0: #Deterministic EnKF
@@ -1264,6 +1256,7 @@ def runDA(expt: Expt, maxT : int = None):
                   countSV+=1                  
             xma = np.mean(xa, axis = -1)
             rmse[t] = np.sqrt(np.mean((xt[:, t] - xma)**2))
+            bias[t] = np.mean(xt[:, t] - xma)
             spread[t, 1] = np.sqrt(np.mean(np.sum((xa - xma[:, np.newaxis])**2, axis = -1)/(Ne - 1)))
 
             #Model integrate forward
