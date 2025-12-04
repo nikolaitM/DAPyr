@@ -1,3 +1,5 @@
+'''test'''
+
 # author HMS 06/2025
 # used for setting what distributions are used to sample errors for and assimilate
 # obs when using the local particle filter (or other nongaussian DA method)
@@ -23,12 +25,43 @@ LOGNORMAL = 2
 CAUCHY = 3
 UNIFORM_DONT_USE_ME = 4
 
+def sph_test(flag):
+      '''Run an experiment using its stored configurations
+      
+      Parameters
+      ----------
+      flag : int
+            The maximum number of time steps to run the experiment out to.
+      
+      Returns
+      ---------
+      flag : int
+            A string specifying the status of the run.
+      '''
+      return flag
+
 
 def sample_errors(states, used_obs_error, params, rng):
+    '''Run an experiment using its stored configurations
+      
+    Parameters
+    ----------
+    expt: Expt
+    An instance of the Expt class you would like to run
 
+    maxT : int, optional
+    The maximum number of time steps to run the experiment out to.
+    Must be less that the maximum time step "T" stored in the experiment. 
+    If None, the experiment will run to the timestep specified by the "T" parameter.
+    
+    Returns
+    ---------
+    status : str
+    A string specifying the status of the run.
+    '''
     # GAUSSIAN = 0
     # STATE_DEP_GAUSSIAN = 1
-
+    
     errors = -999 * np.zeros_like(states)
 
     match used_obs_error:
