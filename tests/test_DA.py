@@ -24,10 +24,11 @@ class TestDA(unittest.TestCase):
             C = np.ones((Nx, Nx))
             gamma = 0.0
             e_flag = 0
+            inf_flag = 0
             qcpass = np.zeros((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
             var_y = 1
-            xa, e_flag = dap.DA.EnSRF_update(xf, xf, xm , xm, Y[:, None], C, np.matmul(C, H.T), var_y, gamma, e_flag, qcpass)
+            xa, e_flag = dap.DA.EnSRF_update(xf, xf, Y[:, None], C, np.matmul(C, H.T), var_y, inf_flag, e_flag, qcpass)
             self.assertTrue(np.allclose(xa_true, xa))
 
       def test_EnSRF_Localize(self):
@@ -44,7 +45,8 @@ class TestDA(unittest.TestCase):
             qcpass = np.zeros((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
             var_y = 1
-            xa, e_flag = dap.DA.EnSRF_update(xf, xf, xm , xm, Y[:, None], C, np.matmul(C, H.T), var_y, gamma, e_flag, qcpass)
+            inf_flag = 0
+            xa, e_flag = dap.DA.EnSRF_update(xf, xf, Y[:, None], C, np.matmul(C, H.T), var_y, inf_flag, e_flag, qcpass)
             self.assertTrue(np.allclose(xa_true, xa))
       @pytest.mark.filterwarnings("ignore:No observations")
       def test_EnSRF_qaqc(self):
@@ -56,10 +58,11 @@ class TestDA(unittest.TestCase):
             C = np.ones((Nx, Nx))
             gamma = 0.0
             e_flag = 0
+            inf_flag = 0
             qcpass = np.ones((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
             var_y = 1
-            xa, e_flag = dap.DA.EnSRF_update(xf, xf, xm , xm, Y[:, None], C, np.matmul(C, H.T), var_y, gamma, e_flag, qcpass)
+            xa, e_flag = dap.DA.EnSRF_update(xf, xf, Y[:, None], C, np.matmul(C, H.T), var_y,inf_flag, e_flag, qcpass)
             self.assertTrue(np.isnan(xa))
             self.assertTrue(e_flag == 1)
 
@@ -75,7 +78,8 @@ class TestDA(unittest.TestCase):
             qcpass = np.zeros((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
             var_y = 1
-            xa, e_flag = dap.DA.EnSRF_update(xf, xf, xm , xm, Y[:, None], C, np.matmul(C, H.T), var_y, gamma, e_flag, qcpass)
+            inf_flag = 0
+            xa, e_flag = dap.DA.EnSRF_update(xf, xf, Y[:, None], C, np.matmul(C, H.T), var_y, inf_flag, e_flag, qcpass)
             self.assertTrue(np.isnan(xa))
             self.assertTrue(e_flag == 1)
 
@@ -203,11 +207,12 @@ class TestDA(unittest.TestCase):
             C = dap.MISC.create_periodic(roi, Nx, 1/Nx)
             gamma = 0.0
             e_flag = 0
+            inf_flag = 0
             qcpass = np.zeros((Ny,))
             xm = np.mean(xf, axis = -1)[:, None]
             var_y = 1
             self.assertEqual(len(Y.shape), 1)
-            xa, e_flag = dap.DA.EnSRF_update(xf, xf, xm , xm, Y, C, np.matmul(C, H.T), var_y, gamma, e_flag, qcpass)
+            xa, e_flag = dap.DA.EnSRF_update(xf, xf, Y, C, np.matmul(C, H.T), var_y, inf_flag, e_flag, qcpass)
             self.assertTrue(np.allclose(xa_true, xa))
 
 

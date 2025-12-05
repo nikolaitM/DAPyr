@@ -1,16 +1,16 @@
 import numpy as np
 import copy
 from . import MISC
+from . import INFLATION
 import warnings
 
 #TODO Clean up and comment inside functions
 #TODO Make the inflation calls in a separate function
 
 def EnSRF_update(xf : np.ndarray, hx : np.ndarray, 
-                 xm : np.ndarray, hxm: np.ndarray, 
                  y : np.ndarray, HC : np.ndarray, HCH: np.ndarray,
-                 var_y : float, gamma : float, 
-                 e_flag : int, qc : np.ndarray):
+                 var_y : float, inf_flag:int,
+                 e_flag : int, qc : np.ndarray, **kwargs):
     '''Performs an Ensemble Square Root Filter update based on Whitaker and Hamill (2002).
     
     Parameters
@@ -19,10 +19,6 @@ def EnSRF_update(xf : np.ndarray, hx : np.ndarray,
         Array of size Nx x Ne containing the ensemble members
     hx : np.ndarray
         Array of size Ny x Ne containing the ensemble members projected into obs-space
-    xm : np.ndarray
-        Array of size Nx x 1 containinng the ensemble mean state
-    hxm : np.ndarray
-        Array of size Ny x 1 containing the ensemble mean projected into obs-space
     y : np.ndarray
         Array of size Ny x 1 containing the observations at time T
     HC : np.ndarray
@@ -32,7 +28,9 @@ def EnSRF_update(xf : np.ndarray, hx : np.ndarray,
     var_y : float
         Observation variance
     gamma : float
-        inflation parameter for RTPS
+        inflation parameter
+    inf_flag : int
+        Flag to choose what inflation scheme to choose
     e_flag : int
         Error flag
     qc : np.ndarray
@@ -52,6 +50,16 @@ def EnSRF_update(xf : np.ndarray, hx : np.ndarray,
     #Ensemble mean
     Ny = len(y[:, 0])
     Nx, Ne = xf.shape
+
+    if inf_flag == 3: #Anderson Inflation
+        infs, infs_y = kwargs['infs'], kwargs['infs_y']
+        var_infs, var_infs_y = kwargs['var_infs'], kwargs['var_infs_y']
+        xf, infs, var_infs = INFLATION.do_Anderson2009(xf, hx, y, infs, var_infs, HC, var_y)
+        hx, infs_y, var_infs_y = INFLATION.do_Anderson2009(hx, hx, y, infs_y, var_infs_y, HCH, var_y)
+    
+    xm = np.mean(xf, axis = -1)[:,None]
+    hxm = np.mean(hx, axis = -1)[:, None]
+
     xp = xf - xm #Nx x Ne
     xpo = copy.deepcopy(xp) #Original perturbation
     hxp = hx - hxm # Ny x Ne
@@ -83,12 +91,21 @@ def EnSRF_update(xf : np.ndarray, hx : np.ndarray,
         beta = 1/(1 + np.sqrt(var_y/var_den))
         hxp = hxp - beta*np.dot(K[:, np.newaxis], hxo[np.newaxis, :])
 
-    #RTPS
-    var_xpo = np.sqrt((1/(Ne-1))*np.sum(xpo*xpo, axis = 1)) #Nx x 1
-    var_xp = np.sqrt((1/(Ne-1))*np.sum(xp*xp, axis = 1)) #Nx x 1
-    inf_factor = gamma*((var_xpo-var_xp)/var_xp) + 1
-    xp = xp*inf_factor[:, np.newaxis]
-    return xm + xp, e_flag
+    match inf_flag:
+        case 0: #Nothing
+            xa_new = xm + xp # Do Nothing
+        case 1: #RTPS
+            gamma = kwargs['gamma']
+            xa_new = INFLATION.do_RTPS(xf, xm + xp, gamma)
+        case 2: #RTPP
+            gamma = kwargs['gamma']
+            xa_new = INFLATION.do_RTPP(xf, xm + xp, gamma)
+        case _: #Anything Else
+            xa_new = xm + xp # Do Nothing
+    if inf_flag == 3:
+        return xa_new, infs, infs_y, var_infs, var_infs_y, e_flag
+    else:
+        return xa_new, e_flag
 
 
 def lpf_update(x : np.ndarray, hx : np.ndarray, 
