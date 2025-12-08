@@ -1,6 +1,6 @@
 '''Initialize, configure, and run data assimilation experiments with toy models.'''
 
-__all__ = ['MISC', 'MODELS', 'DA']
+__all__ = ['MISC', 'MODELS', 'DA', 'OBS_ERRORS']
 
 
 import numpy as np
@@ -151,8 +151,8 @@ class Expt:
                         self.modExpt({'status': 'init model error'})
 
             #Synthetic Observations
-            used_obs_err = self.getParam('used_obs_err')
-            used_obs_err_params = self.getParam('used_obs_err_params')
+            true_obs_err_dist = self.getParam('true_obs_err_dist')
+            true_obs_err_params = self.getParam('true_obs_err_params')
 
             match h_flag:
                   case 0:
@@ -164,7 +164,7 @@ class Expt:
                   case _:
                         raise ValueError(f'Invalid Option Selected for Measurement Operator h: {h_flag}')
 
-            Y = Y_perf + OBS_ERRORS.sample_errors(Y_perf, used_obs_err, used_obs_err_params, rng)
+            Y = Y_perf + OBS_ERRORS.sample_errors(Y_perf, true_obs_err_dist, true_obs_err_params, rng)
 
             return xf_0, xt, Y
 
@@ -285,10 +285,10 @@ class Expt:
 
             #Observation Error Distribution Parameters
             default_gaussian_params = {'mu': 0, 'sigma' : 1}
-            self.obsParams['used_obs_err'] = 0
-            self.obsParams['used_obs_err_params'] = default_gaussian_params
-            self.obsParams['prescribed_obs_err'] = 0
-            self.obsParams['prescribed_obs_err_params'] = default_gaussian_params
+            self.obsParams['true_obs_err_dist'] = 0
+            self.obsParams['true_obs_err_params'] = default_gaussian_params
+            self.obsParams['assumed_obs_err_dist'] = 0
+            self.obsParams['assumed_obs_err_params'] = default_gaussian_params
 
             #Parameters related to observation quality control
             self.obsParams['qc_flag'] = 0
@@ -969,8 +969,8 @@ def runDA(expt: Expt, maxT : int = None):
       maxiter = expt.getParam('maxiter')
       HC =  np.matmul(C,H.T)
       gamma = expt.getParam('gamma')
-      prescribed_obs_err = expt.getParam('prescribed_obs_err')
-      prescribed_obs_err_params = expt.getParam('prescribed_obs_err_params')
+      assumed_obs_err_dist = expt.getParam('assumed_obs_err_dist')
+      assumed_obs_err_params = expt.getParam('assumed_obs_err_params')
 
       #Flags
       h_flag, expt_flag= expt.getParam('h_flag'), expt.getParam('expt_flag')
@@ -1000,16 +1000,16 @@ def runDA(expt: Expt, maxT : int = None):
       # this is necessary either if we are using a Kalman Filter variant
       # or if we are performing basic quality control on obs.
       if expt_flag == 0:
-            if 'sigma' in prescribed_obs_err_params:
-                  var_y = prescribed_obs_err_params['sigma']
+            if 'sigma' in assumed_obs_err_params:
+                  var_y = assumed_obs_err_params['sigma']
             else:
-                  raise KeyError(f'EnSRF Selected but no observation error standard deviation provided in prescribed_obs_err_params: {prescribed_obs_err_params}')
+                  raise KeyError(f'EnSRF Selected but no observation error standard deviation provided in assumed_obs_err_params: {assumed_obs_err_params}')
 
       if qc_flag == 1:
-            if 'sigma' in prescribed_obs_err_params:
-                  var_y = prescribed_obs_err_params['sigma']
+            if 'sigma' in assumed_obs_err_params:
+                  var_y = assumed_obs_err_params['sigma']
             else:
-                  raise KeyError(f'Obs QAQC turned on but no observation error standard deviation provided in prescribed_obs_err_params: {prescribed_obs_err_params}')
+                  raise KeyError(f'Obs QAQC turned on but no observation error standard deviation provided in assumed_obs_err_params: {assumed_obs_err_params}')
             
 
       #Open pool      
@@ -1052,7 +1052,7 @@ def runDA(expt: Expt, maxT : int = None):
       xf = copy.deepcopy(xf_0)
 
       # Retrieve likelihood function (for use with LPF only)
-      L = OBS_ERRORS.get_likelihood(prescribed_obs_err, prescribed_obs_err_params)
+      L = OBS_ERRORS.get_likelihood(assumed_obs_err_dist, assumed_obs_err_params)
 
       for t in range(T):
             #Observation
@@ -1156,3 +1156,4 @@ def runDA(expt: Expt, maxT : int = None):
       #Output stuff
       expt.modExpt({'status': 'completed'})
       return expt.getParam('status')
+

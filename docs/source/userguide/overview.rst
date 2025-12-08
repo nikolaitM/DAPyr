@@ -45,7 +45,7 @@ To change a parameter in the experimental setup, use the :py:meth:`~DAPyr.Expt.m
       expt.modExpt({'sig_y': 1.5})
       print('The observation wlll be different after modification: {}'.format(expt.getParam('Y')[0, 0, 0]))
 
-Once you are happy with your experiment, it is time to run the actual data assimilation cycles. To do this, use the :py:func:`~DAPyr.runDA` function. It simply takes in an :py:class:`~DAPyr.Expt` instance, and runs through all specifications of the experiment.
+Once you are happy with your experiment, it is time to run the actual data assimilation cycles. To do this, use the :py:func:`~dapyr.runda` function. It simply takes in an :py:class:`~DAPyr.Expt` instance, and runs through all specifications of the experiment.
 
 .. code-block:: python
 

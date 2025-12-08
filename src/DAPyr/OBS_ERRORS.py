@@ -1,7 +1,6 @@
-'''test'''
+"""test"""
 
 # author HMS 06/2025
-# used for setting what distributions are used to sample errors for and assimilate
 # obs when using the local particle filter (or other nongaussian DA method)
 
 # sampled errors are controlled by the used_obs_err and used_obs_err_params parameters
@@ -21,47 +20,39 @@ from functools import partial
 
 GAUSSIAN = 0
 STATE_DEP_GAUSSIAN = 1
-LOGNORMAL = 2
-CAUCHY = 3
-UNIFORM_DONT_USE_ME = 4
-
-def sph_test(flag):
-      '''Run an experiment using its stored configurations
-      
-      Parameters
-      ----------
-      flag : int
-            The maximum number of time steps to run the experiment out to.
-      
-      Returns
-      ---------
-      flag : int
-            A string specifying the status of the run.
-      '''
-      return flag
 
 
-def sample_errors(states, used_obs_error, params, rng):
-    '''Run an experiment using its stored configurations
-      
+def sample_errors(
+    states: np.ndarray,
+    true_obs_err_dist: int,
+    true_obs_err_params: dict,
+    rng: np.random.Generator,
+):
+    """Generate samples of observation error according to a prescribed distribution.
+
     Parameters
     ----------
-    expt: Expt
-    An instance of the Expt class you would like to run
+    states : np.array(M, T)
+        M-dimensional model states valid at T different times that each observation error will correspond to.
 
-    maxT : int, optional
-    The maximum number of time steps to run the experiment out to.
-    Must be less that the maximum time step "T" stored in the experiment. 
-    If None, the experiment will run to the timestep specified by the "T" parameter.
-    
+    true_obs_err_dist : int
+        Flag for specifying what distribution observation errors should be sampled from.
+
+    true_obs_err_params : dict
+        Parameters of the distribution specified by true_obs_err_dist.
+
+    rng : numpy.random.Generator
+        Random number generator to sample errors with.
+
     Returns
     ---------
-    status : str
-    A string specifying the status of the run.
-    '''
+    errors : array(M, T)
+        Sampled observation errors.
+
+    """
     # GAUSSIAN = 0
     # STATE_DEP_GAUSSIAN = 1
-    
+
     errors = -999 * np.zeros_like(states)
 
     match used_obs_error:
@@ -69,7 +60,7 @@ def sample_errors(states, used_obs_error, params, rng):
             try:
                 mu, sigma = params["mu"], params["sigma"]
             except KeyError:
-                raise KeyError(f'Parameters mu and sigma not provided in {params}')
+                raise KeyError(f"Parameters mu and sigma not provided in {params}")
             errors = rng.normal(mu, sigma, size=states.shape)
         case 1:
             try:
@@ -79,7 +70,9 @@ def sample_errors(states, used_obs_error, params, rng):
                 sigma2 = params["sigma2"]
                 threshold = params["threshold"]
             except KeyError:
-                raise KeyError(f'Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {params}')
+                raise KeyError(
+                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {params}"
+                )
 
             errs1 = rng.normal(mu1, sigma1, states.shape)
             errs2 = rng.normal(mu2, sigma2, states.shape)
@@ -88,11 +81,28 @@ def sample_errors(states, used_obs_error, params, rng):
 
     return errors
 
-def get_likelihood(prescribed_obs_error, params):
+
+def get_likelihood(assumed_obs_err_dist: int, assumed_obs_err_params: dict):
+    """Create likelihood fucntion corresponding to a prescribed observation error distribution. If a Gaussian observation error is assumed, this also determines the variance used by the ensemble Kalman filter.
+
+    Parameters
+    ----------
+    assumed_obs_err_dist : int
+        Flag for specifying what distribution observation errors should be assumed to come from.
+
+    assumed_obs_err_params : dict
+        Parameters of the distribution specified by assumed_obs_err_dist.
+
+    Returns
+    ---------
+    L : functools.partial
+        Callable likelihood function L(y, hx). The first argument is a vector of scalar observations, and the second argument is the model state projected into observation space.
+
+    """
 
     def gaussian_l(y, hx, mu, sigma):
         d = (y - hx - mu) ** 2 / (2 * sigma**2)
-        d -= np.min(d, axis=-1)[:,None]
+        d -= np.min(d, axis=-1)[:, None]
         return np.exp(-d)
 
     def state_dep_gaussian_l(y, hx, mu1, mu2, sigma1, sigma2, threshold):
@@ -105,7 +115,7 @@ def get_likelihood(prescribed_obs_error, params):
             try:
                 return partial(gaussian_l, mu=params["mu"], sigma=params["sigma"])
             except KeyError:
-                raise KeyError(f'Parameters mu and sigma not provided in {params}')
+                raise KeyError(f"Parameters mu and sigma not provided in {params}")
         case 1:
             try:
                 return partial(
@@ -117,4 +127,6 @@ def get_likelihood(prescribed_obs_error, params):
                     threshold=params["threshold"],
                 )
             except KeyError:
-                raise KeyError(f'Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {params}')
+                raise KeyError(
+                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {params}"
+                )

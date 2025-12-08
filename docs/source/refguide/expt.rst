@@ -73,6 +73,22 @@ The *obsParams* attribute stores all parameters relating to the observations to 
    * - `roi`
      - 0.005
      - Localization radius of influence
+   * - `true_obs_err_dist`
+     - 0
+     - Flag to select observation error distribution to generate observations with (see :doc:`sample_errors <../refguide/obserrs>` )
+               | 0: Gaussian 
+               | 1: State-dependent Gaussian
+   * - `true_obs_err_params`
+     - {'mu': 0, 'sigma' : 1}
+     - Parameters for observation error distribution associated with *true_obs_err_dist*
+   * - `assumed_obs_err_dist`
+     - 0
+     - Flag to specify likelihood functions for observations given model states. (see :doc:`get_likelihood <../refguide/obserrs>` )
+               | 0: Gaussian 
+               | 1: State-dependent Gaussian
+   * - `assumed_obs_err_params`
+     - {'mu': 0, 'sigma' : 1}
+     - Parameters for observation error distribution associated with *assumed_obs_err_dist*
 
 
 **Kalman Filter Parameters**
