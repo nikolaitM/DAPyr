@@ -55,23 +55,23 @@ def sample_errors(
 
     errors = -999 * np.zeros_like(states)
 
-    match used_obs_error:
+    match true_obs_err_dist:
         case 0:
             try:
-                mu, sigma = params["mu"], params["sigma"]
+                mu, sigma = true_obs_err_params["mu"], true_obs_err_params["sigma"]
             except KeyError:
-                raise KeyError(f"Parameters mu and sigma not provided in {params}")
+                raise KeyError(f"Parameters mu and sigma not provided in {true_obs_err_params}")
             errors = rng.normal(mu, sigma, size=states.shape)
         case 1:
             try:
-                mu1 = params["mu1"]
-                mu2 = params["mu2"]
-                sigma1 = params["sigma1"]
-                sigma2 = params["sigma2"]
-                threshold = params["threshold"]
+                mu1 = true_obs_err_params["mu1"]
+                mu2 = true_obs_err_params["mu2"]
+                sigma1 = true_obs_err_params["sigma1"]
+                sigma2 = true_obs_err_params["sigma2"]
+                threshold = true_obs_err_params["threshold"]
             except KeyError:
                 raise KeyError(
-                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {params}"
+                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {true_obs_err_params}"
                 )
 
             errs1 = rng.normal(mu1, sigma1, states.shape)
@@ -110,23 +110,23 @@ def get_likelihood(assumed_obs_err_dist: int, assumed_obs_err_params: dict):
         l_high = np.exp(-((y - hx - mu2) ** 2 / (2 * sigma2**2)))
         return np.where(hx < threshold, l_low, l_high)
 
-    match prescribed_obs_error:
+    match assumed_obs_err_dist:
         case 0:
             try:
-                return partial(gaussian_l, mu=params["mu"], sigma=params["sigma"])
+                return partial(gaussian_l, mu=assumed_obs_err_params["mu"], sigma=assumed_obs_err_params["sigma"])
             except KeyError:
-                raise KeyError(f"Parameters mu and sigma not provided in {params}")
+                raise KeyError(f"Parameters mu and sigma not provided in {assumed_obs_err_params}")
         case 1:
             try:
                 return partial(
                     state_dep_gaussian_l,
-                    mu1=params["mu1"],
-                    sigma1=params["sigma1"],
-                    mu2=params["mu2"],
-                    sigma2=params["sigma2"],
-                    threshold=params["threshold"],
+                    mu1=assumed_obs_err_params["mu1"],
+                    sigma1=assumed_obs_err_params["sigma1"],
+                    mu2=assumed_obs_err_params["mu2"],
+                    sigma2=assumed_obs_err_params["sigma2"],
+                    threshold=assumed_obs_err_params["threshold"],
                 )
             except KeyError:
                 raise KeyError(
-                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {params}"
+                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {assumed_obs_err_params}"
                 )
