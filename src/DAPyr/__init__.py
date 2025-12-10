@@ -12,6 +12,7 @@ from . import MODELS
 from . import MISC
 from . import DA
 from . import OBS_ERRORS
+from . import INFLATION
 import xarray as xr
 from . import Exceptions as dapExceptions
 import pickle
@@ -188,7 +189,14 @@ class Expt:
             H = np.eye(Nx) #Linear Measurement Operator
             H = H[self.obsParams['obb']:Nx-self.obsParams['obb']:self.obsParams['obf'], :]
             self.obsParams['H'] = H
-            self.obsParams['Ny'] = len(H)
+            Ny = len(H)
+            self.obsParams['Ny'] = Ny
+            init_infs = self.obsParams['init_infs']
+            if self.obsParams['inf_flag'] == 3: #Anderson Inflation
+                  self.obsParams['infs'] = np.ones((Nx,))*init_infs
+                  self.obsParams['infs_y'] = np.ones((Ny,))*init_infs
+                  self.obsParams['var_infs'] = np.ones((Nx,))*init_infs
+                  self.obsParams['var_infs_y'] = np.ones((Ny,))*init_infs
             #Create localization matrices
             if self.obsParams['localize']==1:
                   C = MISC.create_periodic(self.obsParams['roi'], Nx, 1/Nx)
@@ -272,10 +280,9 @@ class Expt:
             self.obsParams['localize'] = 1
             self.obsParams['roi'] = 0.005
             #EnKF Parameters
-            self.obsParams['inflation'] = 1
-            self.obsParams['inf_flag'] = 0 #What Inflation Method to choose
-            self.obsParams['gamma'] = 0.00
-
+            self.obsParams['inf_flag'] = 0 #Default No Inflation
+            self.obsParams['gamma'] = 0.30
+            self.obsParams['init_infs'] = 0.8
             #LPF Parameters
             self.obsParams['mixing_gamma'] = 0.3
             self.obsParams['kddm_flag'] = 0
@@ -971,6 +978,11 @@ def runDA(expt: Expt, maxT : int = None):
       gamma = expt.getParam('gamma')
       assumed_obs_err_dist = expt.getParam('assumed_obs_err_dist')
       assumed_obs_err_params = expt.getParam('assumed_obs_err_params')
+      inf_flag = expt.getParam('inf_flag')
+      infs = expt.getParam('infs')
+      infs_y = expt.getParam('infs_y')
+      var_infs = expt.getParam('var_infs')
+      var_infs_y = expt.getParam('var_infs_y')
 
       #Flags
       h_flag, expt_flag= expt.getParam('h_flag'), expt.getParam('expt_flag')
@@ -1083,7 +1095,12 @@ def runDA(expt: Expt, maxT : int = None):
             #CHECK Make DA update steps return the ensemble mean, make LPF return xmpf specifically
             match expt_flag:
                   case 0: #Deterministic EnKF
-                        xa, e_flag = DA.EnSRF_update(xf, hx, xm ,hxm, Y[:, t], C, HC, var_y, gamma, e_flag, qaqcpass)
+                        da_results = DA.EnSRF_update(xf, hx, Y[:, t], C, HC, var_y, inf_flag, e_flag, qaqcpass, 
+                                                     infs = infs, infs_y = infs_y, var_infs = var_infs, var_infs_y = var_infs_y, gamma = gamma)
+                        if len(da_results) == 2:
+                              xa, e_flag = da_results
+                        else:
+                              xa, infs, infs_y, var_infs, var_infs_y, e_flag = da_results
                   case 1: #LPF
                         xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], H, C, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass, L)
                   case 2: # Nothing

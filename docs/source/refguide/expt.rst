@@ -5,7 +5,7 @@ Configuring an Experiment
       :class-doc-from: class
       :members:
 
-Configurable Paramters
+Configurable Parameters
 -----------------------
 
 basicParams
@@ -101,9 +101,21 @@ Below are all parameters directly configuring the ensemble square root filter.
    * - Paramter
      - Default
      - Description
+   * - `inf_flag`
+     - 0
+     - Flag to select inflation method to apply
+         | 0 : No Inflation
+         | 1 : Relaxation to Prior Perturbation (RTPP)
+         | 2 : Relaxation to Prior Spread (RTPS)
+         | 3 : Adaptive Inflation
    * - `gamma`
-     - 0.00
-     - Inflation parameter for Relaxation to Prior Spread (RTPS).
+     - 0.30
+     - Inflation parameter for RTPP and RTPS.
+   * - `init_infs`
+     - 0.80
+     - Sets the initial value for the mean and variance of the distribution of the inflation parameter for adaptive inflation
+
+For the adaptive inflation technique, while the `init_infs` parameter controls the inital distribution for inflation, the vector of inflation values and their variances can be accessed via the `infs` and `var_infs` parameter.
 
 **Local Particle Filter Parameters**
 
