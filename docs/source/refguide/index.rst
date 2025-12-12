@@ -5,3 +5,4 @@ Reference Guide
       expt
       runda
       helper
+      obserrs

@@ -105,3 +105,89 @@ For more complex modifications and edit you can directly access the state vector
 
 
 
+Specifying Alternate Observation Error Distributions
+----------------------------------------------------
+During spinup, observations can be sampled from a user-prescribed distribution. This is accomplished by configuring the `true_obs_err_dist` and `true_obs_err_params` parameters when initializing an experiment. Currently supported distributions can be found :ref:`here <obs-err-supported>`.
+
+.. code-block:: python
+
+		import DAPyr as dap
+		import matplotlib.pyplot as plt
+
+		# Corresponds to state-dependent Gaussian observation error.
+
+		SD_GAUSSIAN_ERR = 1
+
+		# Errors have mean -2 and variance 1 when the state is negative,
+		# and mean 3 and variance 0.25 when the state is positive.
+
+		SD_GAUSSIAN_PARAMS = {'mu1': -2.0, 'sigma1': 1, 'mu2': 3.0, 'sigma2':.5, 'threshold': 0}
+
+		e_sd_gauss = dap.Expt('Using Different Obs Errors in DAPyr', {'expt_flag': 1,
+					'model_flag':1,
+					'localize':1,
+					'obf': 1,
+					'seed': 1,
+					'true_obs_err_dist': SD_GAUSSIAN_ERR,
+					'true_obs_err_params': SD_GAUSSIAN_PARAMS,
+					'Ne':80,
+					'T': 500})
+
+		
+		xf_0, xt, y = e_sd_gauss.getStates()
+
+		y = y.flatten()
+		xt = xt.flatten()
+
+		plt.hist(y-xt, bins=50)
+		plt.show()
+
+We can confirm that observation errors were sampled from the prescribed distribution:
+
+
+.. figure:: imgs/obs-err-hist.png
+   :alt: A histogram of all observation errors. There is a smaller Gaussian with mean -2 and a larger Gaussian with mean 3. 
+
+When using a data assimilation method that can accommodate non-Gaussian observation errors, we can choose an alternate form of the likelihood of observations given model states by setting `assumed_obs_err_dist` and `assumed_obs_err_params`. This is also how we can set a different variance for a Gaussian observation error. Below, we run data assimilation experiments with the above observation errors with Gaussian likelihoods and with likelihoods that correspond to the true observation error distribution.
+
+.. code-block:: python
+
+		e_sd_gauss_l = dap.Expt('Assuming a Different Form of the Likelihood', {'expt_flag': 1,
+					'model_flag':1,
+					'localize':1,
+					'obf': 1,
+					'seed': 1,
+					'true_obs_err_dist': SD_GAUSSIAN_ERR,
+					'true_obs_err_params': SD_GAUSSIAN_PARAMS,
+					'assumed_obs_err_dist': SD_GAUSSIAN_ERR,
+					'assumed_obs_err_params': SD_GAUSSIAN_PARAMS,
+					'Ne':80,
+					'T': 500})
+
+		# for comparison
+		e_noda = dap.Expt('Assuming a Different Form of the Likelihood', {'expt_flag': 2,
+					'model_flag':1,
+					'localize':1,
+					'obf': 1,
+					'seed': 1,
+					'Ne':80,
+					'T': 500})
+
+		dap.runDA(e_sd_gauss)
+		dap.runDA(e_sd_gauss_l)
+		dap.runDA(e_noda)
+
+		plt.plot(e_sd_gauss.rmse, label='Gaussian Likelihood')
+		plt.plot(e_sd_gauss_l.rmse, label='State-Dependent Likelihood')
+		plt.plot(e_noda.rmse, label='No DA')
+		plt.legend()
+		plt.ylim((0,6))
+		plt.xlabel('DA Cycle')
+		plt.ylabel('RMSE')
+		plt.title('Performance with Different Assumed Likelihoods')
+		plt.show()
+
+
+
+.. figure:: imgs/assim-diff-likelihoods.png
+   :alt: Root mean square errors for three different data assimilation experiments. The best performance comes from using the correct likelihoods, the worst comes from doing no data assimilation, and using Gaussian likelihoods gives root mean square errors between the two.
