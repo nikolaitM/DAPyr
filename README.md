@@ -14,7 +14,7 @@ secret readme edit
 3. Lorenz 2005
 
 ### Data Assimilation Methods:
-1. Ensemble Square Root Filter [(Whitake and Hamill, 2002)](https://journals.ametsoc.org/view/journals/mwre/130/7/1520-0493_2002_130_1913_edawpo_2.0.co_2.xml)
+1. Ensemble Square Root Filter [(Whitaker and Hamill, 2002)](https://journals.ametsoc.org/view/journals/mwre/130/7/1520-0493_2002_130_1913_edawpo_2.0.co_2.xml)
 2. Localized Particle Filter [(Poterjoy, 2022)](https://rmets.onlinelibrary.wiley.com/doi/10.1002/qj.4328)
 
 ### Measurement Operators:

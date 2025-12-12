@@ -1,5 +1,3 @@
-"""test"""
-
 # author HMS 06/2025
 # obs when using the local particle filter (or other nongaussian DA method)
 
@@ -17,6 +15,7 @@
 
 import numpy as np
 from functools import partial
+from . import Exceptions as dapExceptions
 
 GAUSSIAN = 0
 STATE_DEP_GAUSSIAN = 1
@@ -60,7 +59,7 @@ def sample_errors(
             try:
                 mu, sigma = true_obs_err_params["mu"], true_obs_err_params["sigma"]
             except KeyError:
-                raise KeyError(f"Parameters mu and sigma not provided in {true_obs_err_params}")
+                raise dapExceptions.BadObsParams('mu and sigma', true_obs_err_params)
             errors = rng.normal(mu, sigma, size=states.shape)
         case 1:
             try:
@@ -70,9 +69,7 @@ def sample_errors(
                 sigma2 = true_obs_err_params["sigma2"]
                 threshold = true_obs_err_params["threshold"]
             except KeyError:
-                raise KeyError(
-                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {true_obs_err_params}"
-                )
+                raise dapExceptions.BadObsParams('mu1, sigma1, mu2, sigma2', true_obs_err_params)
 
             errs1 = rng.normal(mu1, sigma1, states.shape)
             errs2 = rng.normal(mu2, sigma2, states.shape)
@@ -115,7 +112,7 @@ def get_likelihood(assumed_obs_err_dist: int, assumed_obs_err_params: dict):
             try:
                 return partial(gaussian_l, mu=assumed_obs_err_params["mu"], sigma=assumed_obs_err_params["sigma"])
             except KeyError:
-                raise KeyError(f"Parameters mu and sigma not provided in {assumed_obs_err_params}")
+                raise dapExceptions.BadObsParams('mu and sigma', assumed_obs_err_params)
         case 1:
             try:
                 return partial(
@@ -127,6 +124,4 @@ def get_likelihood(assumed_obs_err_dist: int, assumed_obs_err_params: dict):
                     threshold=assumed_obs_err_params["threshold"],
                 )
             except KeyError:
-                raise KeyError(
-                    f"Parameters mu1, sigma1, mu2, sigma2, and threshold not provided in {assumed_obs_err_params}"
-                )
+                raise dapExceptions.BadObsParams('mu1, sigma1, mu2, sigma2', assumed_obs_err_params)

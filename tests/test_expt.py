@@ -108,7 +108,7 @@ class TestExptMethod(unittest.TestCase):
         self.patcher.stop()
 
     def test_copyMismatchObs(self):
-        '''Test is the copyStates method throwns an exception if differing number of observations are being assimilated'''
+        '''Test if the copyStates method throwns an exception if differing number of observations are being assimilated'''
         e1 = dap.Expt('test1')
         e2 = dap.Expt('test2', {'obf': 2})
         self.assertRaises(dap.Exceptions.MismatchObs, e2.copyStates, e1)
