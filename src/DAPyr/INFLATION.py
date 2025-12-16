@@ -30,7 +30,6 @@ def do_Anderson2009(xf, hx, Y, gamma_p, sigma_lambda_p, HC, var_y):
       #Y observations
       #gamma_p, size Nx x 1
       #sigma_p size Nx x 1
-      #C Localization matrix, Nx by Nx
       #HC Obs Space Localization Matrix, Ny by Nx
       # sig_y, observation error
       Nx, Ne = xf.shape
@@ -42,7 +41,6 @@ def do_Anderson2009(xf, hx, Y, gamma_p, sigma_lambda_p, HC, var_y):
             y_bar = np.mean(ys)
             ypo = ys - y_bar
             sigma_p = np.var(ys, ddof = 1)
-            #I need the covariance between perturbations and 
             cov = np.matmul(xfpo, ypo[:, None])/(Ne - 1) #This is of size Nx
 
             D = np.abs(y - y_bar) #size Ne
@@ -55,13 +53,16 @@ def do_Anderson2009(xf, hx, Y, gamma_p, sigma_lambda_p, HC, var_y):
             l_prime = (l_bar*(D_square/theta_bar**2 - 1)*(dtheta_dlambda))/theta_bar
 
             b = l_bar/l_prime - 2*gamma_p
-            a = 1
             c = np.square(gamma_p) - sigma_lambda_p - (l_bar*gamma_p/l_prime)
-            discriminant = np.sqrt(b**2 - 4*a*c)
-            root1 = (-b + discriminant)/(2*a*c)
-            root2 = (-b - discriminant)/(2*a*c)
+            discriminant = np.sqrt(b**2 - 4*c)
+            root1 = (-b + discriminant)/2.0
+            root2 = (-b - discriminant)/2.0
             diff1, diff2 = np.abs(root1 - gamma_p), np.abs(root2 - gamma_p)
             gamma_u = np.where(diff1 < diff2, root1, root2)
+            #If the root is negative, disregard
+            gamma_u =np.where(gamma_u > 0.0, gamma_u, gamma_p)
+            #Disregard inflation parameters in which covariance between observation and model space is negative
+            gamma_u = np.where(loc_gamma > 0.0, gamma_u, gamma_p)
             
             #Adjust the variance of each inflation random variable
             gamma_u_inc = gamma_u + np.sqrt(sigma_lambda_p)
@@ -77,7 +78,9 @@ def do_Anderson2009(xf, hx, Y, gamma_p, sigma_lambda_p, HC, var_y):
             
             #Make the posterior the prior
             gamma_p = gamma_u
-            sigma_lambda_p = sigma_u
+            #Uncomment below in order to do updates to the standard devaiation estimate of the inflation parameter
+            #sigma_lambda_p = sigma_u
+
       #Limit inflation to be greater than 1
       gamma_p = np.where((gamma_p < 1) | (np.isnan(gamma_p)), 1, gamma_p)
       #Inflate the prior ensemble member for each state vector component by the mean of hte corresponding updated inflation distribution

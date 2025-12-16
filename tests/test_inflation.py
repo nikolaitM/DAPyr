@@ -76,9 +76,9 @@ class TestINF(unittest.TestCase):
             infs_y = np.ones((Ny,))*init_infs
             var_infs = np.ones((Nx,))*init_infs
             var_infs_y= np.ones((Ny,))*init_infs
-            H = np.eye(Nx)
+            C = np.ones((Nx, Nx))
             var_y = 1.0
-            xf_new, infs_new, var_infs_new = dap.INFLATION.do_Anderson2009(xf, xf, Y[:, None], infs, var_infs, H, var_y)
+            xf_new, infs_new, var_infs_new = dap.INFLATION.do_Anderson2009(xf, xf, Y[:, None], infs, var_infs, C, var_y)
             self.assertTrue(np.allclose(xf_new, xf_true))
 
 if __name__ == '__main__':
