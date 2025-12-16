@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "DAPyr"
-version = "0.1.0"
+version = "1.0.0"
 authors = [
   { name="Maria Nikolaitchik", email="mnikolai@umd.edu" },
 ]
-description = "A Python package for running toy model data assimilation experiments"
+description = "A Python package for running idealized model data assimilation experiments"
 readme = "README.md"
 keywords = ["data assimilation", "Lorenz", "DA"]
 requires-python = ">=3.10"
