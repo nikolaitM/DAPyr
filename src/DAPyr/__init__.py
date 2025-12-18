@@ -105,7 +105,7 @@ class Expt:
             return equality
 
 
-      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, numPool, sig_y, h_flag, H):
+      def _spinup(self, Nx, Ne, dt, T, tau, funcptr, numPool, h_flag, H):
             #Initial Ensemble
             #Spin Up
             seed = self.getParam('seed')
@@ -236,7 +236,7 @@ class Expt:
             h_flag = self.getParam('h_flag')
             H = self.getParam("H")
             #Do model spinup
-            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('NumPool'), self.getParam('sig_y'), h_flag, H)
+            xf_0, xt, Y = self._spinup(Nx, Ne, dt, T, tau, self.getParam('funcptr'), self.getParam('NumPool'), h_flag, H)
 
             self.states['xf_0'] = xf_0
             self.states['xt'] = xt
@@ -387,101 +387,107 @@ class Expt:
             #Only update parameters if they affect model spinup
             if updateRequired or reqUpdate:
                   self._updateParams()
-      # def __str__(self):
-      #       #Basic Model Setup Print
-      #       ret_str = f'''
-      #       ------------------
-      #       Basic Information
-      #       ------------------
-      #       Experiment Name: {self.exptname}
-      #       Ne: {self.basicParams['Ne']} # Number of Ensemble Members
-      #       T: {self.basicParams['T']} # Number of Time Periods
-      #       dt: {self.basicParams['dt']} # Width of Timesteps
-      #       seed: {self.getParam('seed')} # Sets a seed for the random number generator, set to -1 to turn off
 
-      #       ------------------
-      #       Model Information
-      #       ------------------
-      #       model_flag: {self.modelParams['model_flag']} # Model used in forward integration
-      #             0: Lorenz 1963 (Nx = 3)
-      #             1: Lorenz 1996 (Nx = 40)
-      #             2: Lorenz 2005 (Nx  = 480)
-      #       Nx: {self.modelParams['Nx']} # The number of state variables
+      def __str__(self):
+            #Basic Model Setup Print
+            ret_str = f'''
+            ------------------
+            Basic Information
+            ------------------
+            Experiment Name: {self.exptname}
+            Ne: {self.basicParams['Ne']} # Number of Ensemble Members
+            T: {self.basicParams['T']} # Number of Time Periods
+            dt: {self.basicParams['dt']} # Width of Timesteps
+            seed: {self.getParam('seed')} # Sets a seed for the random number generator, set to -1 to turn off
+
+            ------------------
+            Model Information
+            ------------------
+            model_flag: {self.modelParams['model_flag']} # Model used in forward integration
+                  0: Lorenz 1963 (Nx = 3)
+                  1: Lorenz 1996 (Nx = 40)
+                  2: Lorenz 2005 (Nx  = 480)
+            Nx: {self.modelParams['Nx']} # The number of state variables
             
-      #       params: {self.modelParams['model_params']} # Parameters to tune each forecast model
-      #       Above is a list of all the parameters stored for use in the forecast model
-      #             Lorenz 1963: [s, r, b]
-      #             Lorenz 1996: [F]
-      #             Lorenz 2005: [l05_F, l05_Fe, l05_K, l05_I, l05_b, l05_c]
+            params: {self.modelParams['model_params']} # Parameters to tune each forecast model
+            Above is a list of all the parameters stored for use in the forecast model
+                  Lorenz 1963: [s, r, b]
+                  Lorenz 1996: [F]
+                  Lorenz 2005: [l05_F, l05_Fe, l05_K, l05_I, l05_b, l05_c]
 
-      #       ------------------------
-      #       Observation Information
-      #       ------------------------
-      #       h_flag: {self.obsParams['h_flag']} # Type of measurement operator to use
-      #             0: Linear (x)
-      #             1: Quadratic (x^2)
-      #             2: Lognormal (log(abs(x)))
-      #       sig_y: {self.obsParams['sig_y']} # Standard Deviation of observation error
-      #       tau: {self.obsParams['tau']} # Number of model time steps between data assimilation cycles
-      #       obb: {self.obsParams['obb']} # Observation buffer: number of variables to skip when generating obs
-      #       obf: {self.obsParams['obf']} # Observation spatial frequency: spacing between variables
-      #       Ny: {self.obsParams['Ny']} # Number of observations to assimilate each cycle
+            ------------------------
+            Observation Information
+            ------------------------
+            h_flag: {self.obsParams['h_flag']} # Type of measurement operator to use
+                  0: Linear (x)
+                  1: Quadratic (x^2)
+                  2: Lognormal (log(abs(x)))
+            tau: {self.obsParams['tau']} # Number of model time steps between data assimilation cycles
+            obb: {self.obsParams['obb']} # Observation buffer: number of variables to skip when generating obs
+            obf: {self.obsParams['obf']} # Observation spatial frequency: spacing between variables
+            Ny: {self.obsParams['Ny']} # Number of observations to assimilate each cycle
+            obf: {self.obsParams['obf']} # Observation spatial frequency: spacing between variables
+            Ny: {self.obsParams['Ny']} # Number of observations to assimilate each cycle
+            true_obs_err_dist: {self.obsParams['true_obs_err_dist']} # Form of observation error distribution used to generate synthetic observations
+            true_obs_err_params: {self.obsParams['true_obs_err_dist']} # Parameters for distribution specified by true_obs_err_dist
+            assumed_obs_err_dist: {self.obsParams['assumed_obs_err_dist']} # Form of observation error distribution assumed when assimilating observations
+            assumed_obs_err_params: {self.obsParams['assumed_obs_err_params']} # Parameters for distribution specified by assumed_obs_err_dist
 
-      #       ------------------------
-      #       DA Method Parameter Information
-      #       ------------------------
-      #       expt_flag: {self.basicParams['expt_flag']} # DA method for update step
-      #             0: Ensemble Square Root Filter (EnSRF)
-      #             1: Local Particle Filter (LPF)
-      #             2: No update (xa = xf)
-      #             ...
-      #       localize: {self.getParam('localize')} # Determines whether to apply localization
-      #             0: Off
-      #             1: On
-      #       roi: {self.getParam('roi')} # Localization Radius
-      #       -----Kalman Filter (EnSRF)-----
-      #       gamma: {self.getParam('gamma')} # RTPS parameter
+            ------------------------
+            DA Method Parameter Information
+            ------------------------
+            expt_flag: {self.basicParams['expt_flag']} # DA method for update step
+                  0: Ensemble Square Root Filter (EnSRF)
+                  1: Local Particle Filter (LPF)
+                  2: No update (xa = xf)
+                  ...
+            localize: {self.getParam('localize')} # Determines whether to apply localization
+                  0: Off
+                  1: On
+            roi: {self.getParam('roi')} # Localization Radius
+            -----Kalman Filter (EnSRF)-----
+            gamma: {self.getParam('gamma')} # RTPS parameter
 
-      #       -----Local Particle Filter (LPF)-----
-      #       mixing_gamma: {self.getParam('mixing_gamma')} # Mixing coefficient for LPF
-      #       kddm_flag: {self.getParam('kddm_flag')} # Determine whether to apply additional kernal density estimator in LPF step
-      #             0: Off
-      #             1: On
-      #       maxiter: {self.getParam('maxiter')} # Maximum number of tempering iterations to run
-      #       min_res: {self.getParam('min_res')} # Minimum residual
-      #       Nt_eff: {self.getParam('Nt_eff')} # Effective Ensemble Size
-      #       ------------------------
-      #       Miscellaneous Information
-      #       ------------------------
-      #       status: {self.getParam('status')} # Notes the status of the given experiment
-      #             init: The experiment has been initialized and spun-up, but not run using runDA
-      #             init error: An error occurred while spinning up the experiment
-      #             init model error: An error occurred in spin up during model integration
-      #             run DA error: An error occured while running the experiment during the DA step
-      #             run model error: An error occurred in the experiment run during model integration
-      #             completed: runDA has been called and the experiment completed without errors
-      #       output_dir: {self.getParam('output_dir')} # Default output dir for saving experiment-related material
-      #       saveEns: {self.getParam('saveEns')} # Determines whether full posterior ensemble state is saved at each time step
-      #             0: Off
-      #             1: On (Default)
-      #       saveEnsMean: {self.getParam('saveEnsMean')} # Determines whether ensemble mean is saved at each time step
-      #             0: Off
-      #             1: On (Default)
-      #       saveForecastEns: {self.getParam('saveForecastEns')} #Determines whether full prior ensemble state is saved at each time step
-      #             0: Off (Default)
-      #             1: On
-      #       numPool: {self.getParam('numPool')} # Number of CPU cores to use when multiprocessing
+            -----Local Particle Filter (LPF)-----
+            mixing_gamma: {self.getParam('mixing_gamma')} # Mixing coefficient for LPF
+            kddm_flag: {self.getParam('kddm_flag')} # Determine whether to apply additional kernal density estimator in LPF step
+                  0: Off
+                  1: On
+            maxiter: {self.getParam('maxiter')} # Maximum number of tempering iterations to run
+            min_res: {self.getParam('min_res')} # Minimum residual
+            Nt_eff: {self.getParam('Nt_eff')} # Effective Ensemble Size
+            ------------------------
+            Miscellaneous Information
+            ------------------------
+            status: {self.getParam('status')} # Notes the status of the given experiment
+                  init: The experiment has been initialized and spun-up, but not run using runDA
+                  init error: An error occurred while spinning up the experiment
+                  init model error: An error occurred in spin up during model integration
+                  run DA error: An error occured while running the experiment during the DA step
+                  run model error: An error occurred in the experiment run during model integration
+                  completed: runDA has been called and the experiment completed without errors
+            output_dir: {self.getParam('output_dir')} # Default output dir for saving experiment-related material
+            saveEns: {self.getParam('saveEns')} # Determines whether full posterior ensemble state is saved at each time step
+                  0: Off
+                  1: On (Default)
+            saveEnsMean: {self.getParam('saveEnsMean')} # Determines whether ensemble mean is saved at each time step
+                  0: Off
+                  1: On (Default)
+            saveForecastEns: {self.getParam('saveForecastEns')} #Determines whether full prior ensemble state is saved at each time step
+                  0: Off (Default)
+                  1: On
+            numPool: {self.getParam('numPool')} # Number of CPU cores to use when multiprocessing
             
-      #       -----Singular Vector Configuration-----
-      #       doSV: {self.getParam('doSV')} # Flag to switch on signular value (SV) calculation
-      #       stepSV: {self.getParam('stepSV')} # Number of time steps between SV calculations
-      #       forecastSV: {self.getParam('forecastSV')} # SV optimization interval (in increments of time step)
-      #       outputSV: {self.getParam('outputSV')} # Output Directory for SV output
-      #       storeCovar: {self.getParam('storeCovar')} # Flag to determine whether to store the Analysis and Forecast States to estimate the covariance matrices
-      #             0: Off (Default)
-      #             1: On
-      #       '''
-            # return ret_str
+            -----Singular Vector Configuration-----
+            doSV: {self.getParam('doSV')} # Flag to switch on signular value (SV) calculation
+            stepSV: {self.getParam('stepSV')} # Number of time steps between SV calculations
+            forecastSV: {self.getParam('forecastSV')} # SV optimization interval (in increments of time step)
+            outputSV: {self.getParam('outputSV')} # Output Directory for SV output
+            storeCovar: {self.getParam('storeCovar')} # Flag to determine whether to store the Analysis and Forecast States to estimate the covariance matrices
+                  0: Off (Default)
+                  1: On
+            '''
+            return ret_str
       
       def getBasicParams(self) -> tuple:
             '''Retrieve the basic parameters describing the experiment (Ne, Nx, T, and dt).
@@ -1013,13 +1019,13 @@ def runDA(expt: Expt, maxT : int = None):
       # or if we are performing basic quality control on obs.
       if expt_flag == 0:
             if 'sigma' in assumed_obs_err_params:
-                  var_y = assumed_obs_err_params['sigma']
+                  var_y = assumed_obs_err_params['sigma'] ** 2
             else:
                   raise KeyError(f'EnSRF Selected but no observation error standard deviation provided in assumed_obs_err_params: {assumed_obs_err_params}')
 
       if qc_flag == 1:
             if 'sigma' in assumed_obs_err_params:
-                  var_y = assumed_obs_err_params['sigma']
+                  var_y = assumed_obs_err_params['sigma'] ** 2
             else:
                   raise KeyError(f'Obs QAQC turned on but no observation error standard deviation provided in assumed_obs_err_params: {assumed_obs_err_params}')
             
