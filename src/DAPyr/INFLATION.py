@@ -2,7 +2,24 @@ import numpy as np
 from . import MISC
 import warnings
 
-def do_RTPS(xo_prior, xa, gamma):
+def do_RTPS(xo_prior : np.ndarray, xa: np.ndarray, gamma: float):
+      '''
+      Performs Relaxation to Prior Spread inflation on a set of forecast and analysis states given an inflation value.
+      
+      Parameters
+      ----------
+      xo_prior: np.ndarray
+            Forecast ensemble model state of size (Nx x Ne)
+      xa: np.ndarray
+            Analysis ensemble model state of size (Nx x Ne)
+      gamma: float
+            Inflation parameter 
+      
+      Returns
+      ---------
+      xa : np.ndarray
+            Inflated analysis model state of size (Nx x Ne)
+      '''
       Nx, Ne = xo_prior.shape
       xo_m = np.mean(xo_prior, axis = -1)
       xa_m = np.mean(xa, axis = -1)
@@ -15,7 +32,24 @@ def do_RTPS(xo_prior, xa, gamma):
       return xa_m[:, None] + xp_ret
 
 
-def do_RTPP(xf_prior, xa_old, gamma):
+def do_RTPP(xf_prior:np.ndarray, xa_old: np.ndarray, gamma: float):
+      '''
+      Performs Relaxation to Prior Perturbation inflation on a set of forecast and analysis model states given an inflation parameter.
+      
+      Parameters
+      ----------
+      xo_prior: np.ndarray
+            Forecast ensemble model state of size (Nx x Ne)
+      xa: np.ndarray
+            Analysis ensemble model state of size (Nx x Ne)
+      gamma: float
+            Inflation parameter 
+      
+      Returns
+      ---------
+      xa : np.ndarray
+            Inflated analysis model state of size (Nx x Ne)
+      '''
       xf_m = np.mean(xf_prior, axis = -1)
       xa_m = np.mean(xa_old, axis = -1)
       xpf = xf_prior - xf_m[:, None]
@@ -24,14 +58,38 @@ def do_RTPP(xf_prior, xa_old, gamma):
       return xa_m[:, None] + xp_ret
 
 
-def do_Anderson2009(xf, hx, Y, gamma_p, sigma_lambda_p, HC, var_y):
-      #xf prior ensemble members (Nx by Ne)
-      #hx obs space ensemble members (Ny by Ne)
-      #Y observations
-      #gamma_p, size Nx x 1
-      #sigma_p size Nx x 1
-      #HC Obs Space Localization Matrix, Ny by Nx
-      # sig_y, observation error
+def do_Anderson2009(xf: np.ndarray, hx:np.ndarray, Y:np.ndarray,
+                  gamma_p: np.ndarray, sigma_lambda_p: np.ndarray,
+                  HC: np.ndarray, var_y: float):
+      '''
+      Docstring for do_Anderson2009
+      
+      Parameters
+      -----------
+      xf: np.ndarray
+            Forecast ensemble model state of size (Nx x Ne)
+      hx: np.ndarray
+            Forecast ensemble model state projected into observation space of size (Ny x Ne)
+      Y: np.ndarray
+            Array of observations to assimilate of size (Ny x 1)
+      gamma_p: np.ndarray
+            Array of starting estimates of mean inflation parameter of size (Nx)
+      sigma_lambda_p: np.ndarray
+            Array of starting estimates of the variance of inflation parameter with size (Nx)
+      HC: np.ndarray
+            An array of the localization matrix projected into observation space of size (Ny x Nx)
+      var_y: float
+            The assumed variance of the observation error
+
+      Returns
+      --------
+      xf_inf: np.ndarray
+            Updated inflate ensemble model state of size (Nx x Ne)
+      gamma_p: np.ndarray
+            Updated estimates of inflation parameter means of size (Nx)
+      sigma_lambda_p: np.ndarray
+            Updated estimates of inflation parameter variances of size (Nx)
+      '''
       Nx, Ne = xf.shape
       xf_m = np.mean(xf, axis = -1)[:, None]
       xfpo = xf - xf_m

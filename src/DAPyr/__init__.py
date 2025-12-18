@@ -311,8 +311,7 @@ class Expt:
             #Output Parameters
             self.miscParams['status'] = 'init'
             self.miscParams['output_dir'] = './'
-            #TODO Switch saveEns to off on release
-            self.miscParams['saveEns'] = 1
+            self.miscParams['saveEns'] = 0
             self.miscParams['saveEnsMean'] = 1
             self.miscParams['saveForecastEns'] = 0
 
@@ -446,7 +445,13 @@ class Expt:
                   1: On
             roi: {self.getParam('roi')} # Localization Radius
             -----Kalman Filter (EnSRF)-----
-            gamma: {self.getParam('gamma')} # RTPS parameter
+            inf_flag: {self.getParam('inf_flag')} # Inflation Method
+                  0: No Inflation
+                  1: Relaxation to Prior Perturbation (RTPP)
+                  2: Relaxation to Prior Spread (RTPS)
+                  3: Anderson Adaptive Inflation
+            gamma: {self.getParam('gamma')} # RTPS/RTPP parameter
+            init_infs: {self.getParam('init_infs')} # Initial Mean and Variance of Inflation Parameter Estimate for Adaptive Inflation
 
             -----Local Particle Filter (LPF)-----
             mixing_gamma: {self.getParam('mixing_gamma')} # Mixing coefficient for LPF

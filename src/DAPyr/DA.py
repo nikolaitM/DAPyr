@@ -6,7 +6,6 @@ import warnings
 import functools
 
 #TODO Clean up and comment inside functions
-#TODO Make the inflation calls in a separate function
 
 def EnSRF_update(xf : np.ndarray, hx : np.ndarray, 
                  y : np.ndarray, HC : np.ndarray, HCH: np.ndarray,
@@ -28,8 +27,6 @@ def EnSRF_update(xf : np.ndarray, hx : np.ndarray,
         Localization matrix of size Ny x Ny in obs-space
     var_y : float
         Observation variance
-    gamma : float
-        inflation parameter
     inf_flag : int
         Flag to choose what inflation scheme to choose
     e_flag : int
@@ -43,6 +40,11 @@ def EnSRF_update(xf : np.ndarray, hx : np.ndarray,
         Array of size Nx x Ne representing analysis ensemble states
     e_flag : int
         Error flag after data assimilation step
+
+    Other Parameters
+    -----------------
+    **kwargs
+        Extra arguments to `EnSRF_update` to pass to inflation parameters. See documentation for `EnSRF_update` for a list of all possible arguments.
     '''
         
     if len(y.shape) == 1: #If Y is 1-dimensional, make it the correct dimension
@@ -147,6 +149,8 @@ def lpf_update(x : np.ndarray, hx : np.ndarray,
         Error flag
     qcpass : np.ndarray
         Array of length Ny repesenting quality control of observations
+    L : functools.partial
+        Callable likelihood function L(y, hx). The first argument is a vector of scalar observations, and the second argument is the model state projected into observation space.
 
     Returns
     --------
@@ -296,7 +300,7 @@ def _pf_merge(x, xs, loc, Ne, xmpf, var_a, alpha):
 
     xmpf : np.ndarray
 
-    var_a : ?
+    var_a : np.ndarray
 
     alpha : float
 
