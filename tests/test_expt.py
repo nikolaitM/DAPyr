@@ -6,7 +6,7 @@ import numpy as np
 import copy
 import pytest
 
-def loadStates(self, Nx, Ne, dt, T, tau, funcptr, NumPool, sig_y, h_flag, H):
+def loadStates(self, Nx, Ne, dt, T, tau, funcptr, NumPool, h_flag, H):
     '''A mock function that will replace the Expt._spinup method.
     
     The actual _spinup method incorporates a random number generator, and is therefore
