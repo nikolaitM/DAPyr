@@ -58,7 +58,7 @@ The *seed* parameter in the :class:`~DAPyr.Expt` class sets the seed of the rand
 
 .. note:: 
 
-      Setting the *seed* parameter will only ensure equal ensemble initial states if **ensemble sizes are equal between experiments**. Additionally, the *seed* parameter does not enfore equality for either model truth or observation state vectors. 
+      Setting the *seed* parameter will only ensure equal ensemble initial states if **ensemble sizes are equal between experiments**. Additionally, the *seed* parameter does not enforce equality for either model truth or observation state vectors. 
 
 Using the :py:meth:`~DApyr.Expt.copyStates` method
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,7 +68,7 @@ The :py:meth:`~DAPyr.Expt.copyStates` method ensures all three state vectors are
 .. figure:: imgs/param-graph.png
    :alt: A graph showcasing state vector dependencies on parameter
 
-   State vector dependency based on parameter. Edges point to what parameters influence what state vectors during spinup.
+   State vector dependency based on parameter. Edges point to what parameters influence what state vectors during spin-up.
 
 .. code-block:: python
 
@@ -107,7 +107,7 @@ For more complex modifications and edit you can directly access the state vector
 
 Specifying Alternate Observation Error Distributions
 ----------------------------------------------------
-During spinup, observations can be sampled from a user-prescribed distribution. This is accomplished by configuring the `true_obs_err_dist` and `true_obs_err_params` parameters when initializing an experiment. Currently supported distributions can be found :ref:`here <obs-err-supported>`.
+During spin-up, observations can be sampled from a user-prescribed distribution. This is accomplished by configuring the `true_obs_err_dist` and `true_obs_err_params` parameters when initializing an experiment. Currently supported distributions can be found :ref:`here <obs-err-supported>`.
 
 .. code-block:: python
 

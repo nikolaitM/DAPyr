@@ -41,12 +41,12 @@ Parameters in the *basicParams* attribute store information that define the basi
 obsParams
 ^^^^^^^^^^^^^^^
 
-The *obsParams* attribute stores all parameters relating to the observations to assimilation, from what measurement operator to use to prescribing observation error. Additionally, the *obsParam* attribute stores parameters relating to coniguring the data assimilation methods.
+The *obsParams* attribute stores all parameters relating to the observations to assimilation, from what measurement operator to use to prescribing observation error. Additionally, the *obsParam* attribute stores parameters relating to configuring the data assimilation methods.
 
 .. list-table::
    :header-rows: 1
 
-   * - Paramter
+   * - Parameter
      - Default
      - Description
    * - `h_flag`
@@ -55,9 +55,6 @@ The *obsParams* attribute stores all parameters relating to the observations to 
                | 0: Linear (Hx = x) 
                | 1: Quadratic (Hx = x^2)
                | 2: Logarithmic (Hx = log(abs(x)))
-   * - `sig_y`
-     - 1.0
-     - Observations Standard Deviation
    * - `tau`
      - 1
      - Number of cycles between data assimilation cycles
@@ -98,7 +95,7 @@ Below are all parameters directly configuring the ensemble square root filter.
 .. list-table::
    :header-rows: 1
 
-   * - Paramter
+   * - Parameter
      - Default
      - Description
    * - `inf_flag`
@@ -124,7 +121,7 @@ Below are all parameters directly configuring the local particle filter.
 .. list-table::
    :header-rows: 1
    
-   * - Paramter
+   * - Parameter
      - Default
      - Description
    * - `mixing_gamma`
@@ -151,7 +148,7 @@ The *modelParams* attribute stores parameters configuring the chosen model for t
 .. list-table::
    :header-rows: 1
 
-   * - Paramter
+   * - Parameter
      - Default
      - Description
    * - `model_flag`
@@ -172,7 +169,7 @@ The *modelParams* attribute stores parameters configuring the chosen model for t
    :header-rows: 1
 
    * - Model
-     - Paramter
+     - Parameter
      - Default
    * - Lorenz (1963)
      - s
@@ -213,7 +210,7 @@ The *miscParams* attribute stores all parameters relating to experiment output, 
 .. list-table::
    :header-rows: 1
 
-   * - Paramter
+   * - Parameter
      - Default
      - Description
    * - `output_dir`
@@ -221,7 +218,7 @@ The *miscParams* attribute stores all parameters relating to experiment output, 
      - The default file path for saving the experiment
    * - `numPool`
      - 8
-     - Number of subprocesses to spawn when conducting model integration and model spinup
+     - Number of subprocesses to spawn when conducting model integration and model spin-up
    * - `saveEns`
      - 0
      - Should the analysis ensemble state be stored each time step in `x_ens`. 0 is False, 1 is True.
@@ -237,7 +234,7 @@ The *miscParams* attribute stores all parameters relating to experiment output, 
 .. list-table::
    :header-rows: 1
 
-   * - Paramter
+   * - Parameter
      - Default
      - Description
    * - `doSV``
