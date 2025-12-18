@@ -429,7 +429,7 @@ class Expt:
             obf: {self.obsParams['obf']} # Observation spatial frequency: spacing between variables
             Ny: {self.obsParams['Ny']} # Number of observations to assimilate each cycle
             true_obs_err_dist: {self.obsParams['true_obs_err_dist']} # Form of observation error distribution used to generate synthetic observations
-            true_obs_err_params: {self.obsParams['true_obs_err_dist']} # Parameters for distribution specified by true_obs_err_dist
+            true_obs_err_params: {self.obsParams['true_obs_err_params']} # Parameters for distribution specified by true_obs_err_dist
             assumed_obs_err_dist: {self.obsParams['assumed_obs_err_dist']} # Form of observation error distribution assumed when assimilating observations
             assumed_obs_err_params: {self.obsParams['assumed_obs_err_params']} # Parameters for distribution specified by assumed_obs_err_dist
 
