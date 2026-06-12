@@ -284,7 +284,6 @@ class Expt:
             self.obsParams['gamma'] = 0.30
             self.obsParams['init_infs'] = 0.8
             #LPF Parameters
-            self.obsParams['mixing_gamma'] = 0.3
             self.obsParams['kddm_flag'] = 0
             self.obsParams['min_res'] = 0.0
             self.obsParams['maxiter'] = 1
@@ -454,7 +453,6 @@ class Expt:
             init_infs: {self.getParam('init_infs')} # Initial Mean and Variance of Inflation Parameter Estimate for Adaptive Inflation
 
             -----Local Particle Filter (LPF)-----
-            mixing_gamma: {self.getParam('mixing_gamma')} # Mixing coefficient for LPF
             kddm_flag: {self.getParam('kddm_flag')} # Determine whether to apply additional kernal density estimator in LPF step
                   0: Off
                   1: On
@@ -981,7 +979,6 @@ def runDA(expt: Expt, maxT : int = None):
       tau = expt.getParam('tau')
       C = expt.getParam('C')
       Nt_eff = expt.getParam('Nt_eff')
-      mixing_gamma = expt.getParam('mixing_gamma')
       min_res = expt.getParam('min_res')
       kddm_flag = expt.getParam('kddm_flag')
       maxiter = expt.getParam('maxiter')
@@ -1113,7 +1110,7 @@ def runDA(expt: Expt, maxT : int = None):
                         else:
                               xa, infs, infs_y, var_infs, var_infs_y, e_flag = da_results
                   case 1: #LPF
-                        xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], H, C, Nt_eff*Ne, mixing_gamma, min_res, maxiter, kddm_flag, e_flag, qaqcpass, L)
+                        xa, e_flag = DA.lpf_update(xf, hx, Y[:, t], H, C, Nt_eff*Ne, min_res, maxiter, kddm_flag, e_flag, qaqcpass, L)
                   case 2: # Nothing
                         xa = xf
 
