@@ -96,6 +96,9 @@ class Linear3D():
     def __init__(self, obsParams: dict, modelParams: dict, Nx):
         nx = modelParams['model_params']['nx']
         ny = modelParams['model_params']['ny']
+        if ny is None:
+             ny = nx
+             
         self.H = np.eye(Nx) #Linear Measurement Operator
         self.H = self.H[obsParams['obb']:Nx-obsParams['obb'], :]
 
